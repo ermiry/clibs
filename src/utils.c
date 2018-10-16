@@ -1,5 +1,6 @@
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #pragma region STRINGS
 
@@ -52,5 +53,20 @@ char *str_toLower (char *str) {
     return temp;
 
 } */
+
+#pragma endregion
+
+/*** OTHER ***/
+
+#pragma region OTHER
+
+void cleanStdin (void) {
+
+    int c;
+    do {
+        c = getchar();
+    } while (c != '\n' && c != EOF);
+
+}
 
 #pragma endregion
