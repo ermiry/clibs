@@ -24,7 +24,8 @@ void str_concat (char *des, char *s1, char *s2) {
 
 }
 
-char *str_toUpper (char *str) {
+// FIXME:
+/* char *str_toUpper (char *str) {
 
     if (!str) return NULL;
 
@@ -50,6 +51,6 @@ char *str_toLower (char *str) {
 
     return temp;
 
-}
+} */
 
 #pragma endregion
