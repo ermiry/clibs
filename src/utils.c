@@ -25,16 +25,19 @@ void str_concat (char *des, char *s1, char *s2) {
 
 }
 
-// FIXME:
-/* char *str_toUpper (char *str) {
+char *str_toUpper (char *str) {
 
     if (!str) return NULL;
 
     char *temp = (char *) calloc (strlen (str) + 1, sizeof (char));
 
-    while (*str) *temp++ = toupper (*str++);
+    int i = 0;
+    while (str[i]) {
+        temp[i] = toupper (str[i]);
+        i++;
+    }
 
-    *temp = '\0';
+    temp[i] = '\0';
 
     return temp;
 
@@ -46,13 +49,17 @@ char *str_toLower (char *str) {
 
     char *temp = (char *) calloc (strlen (str) + 1, sizeof (char));
 
-    while (*str) *temp++ = tolower (*str++);
+    int i = 0;
+    while (str[i]) {
+        temp[i] = tolower (str[i]);
+        i++;
+    }
 
-    *temp = '\0';
+    temp[i] = '\0';
 
     return temp;
 
-} */
+} 
 
 #pragma endregion
 
