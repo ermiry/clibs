@@ -24,7 +24,7 @@ void dlist_reset (DoubleList *list) {
         if (LIST_SIZE (list) > 0) {
             void *data = NULL;
             while (LIST_SIZE (list) > 0) {
-                data = removeElement (list, NULL);
+                data = dlist_remove_element (list, NULL);
                 if (data != NULL && list->destroy != NULL) list->destroy (data);
             }
         }
@@ -43,7 +43,7 @@ void dlist_clean (DoubleList *list) {
     if (list) {
         void *data = NULL;
         while (LIST_SIZE (list) > 0) 
-            data = removeElement (list, NULL);
+            data = dlist_remove_element (list, NULL);
 
         free (list);
     }
@@ -57,7 +57,7 @@ void dlist_destroy (DoubleList *list) {
             void *data = NULL;
 
             while (LIST_SIZE (list) > 0) {
-                data = removeElement (list, NULL);
+                data = dlist_remove_element (list, NULL);
                 if (data != NULL && list->destroy != NULL) list->destroy (data);
             }
         }
