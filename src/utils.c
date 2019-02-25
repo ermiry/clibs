@@ -2,9 +2,9 @@
 #include <ctype.h>
 #include <stdio.h>
 
-#pragma region STRINGS
-
 /*** STRINGS ***/
+
+#pragma region STRINGS
 
 void str_copy (char *to, char *from) {
 
