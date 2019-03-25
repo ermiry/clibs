@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "stdint.h": "c",
-        "dllist.h": "c",
-        "cstdint": "c"
-    }
-}

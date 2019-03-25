@@ -20,16 +20,7 @@ typedef enum LogMsgType {
     WARNING,
     SUCCESS,
     DEBUG_MSG,
-    TEST,
-
-    REQ = 10,
-    PACKET,
-    FILE_REQ,
-    GAME,
-    PLAYER,
-
-    SERVER = 100,
-    CLIENT
+    TEST
 
 } LogMsgType;
 
