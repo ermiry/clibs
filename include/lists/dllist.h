@@ -20,6 +20,7 @@ typedef struct List {
     ListElement *end;
 
     void (*destroy)(void *data);
+    int (*compare)(void *one, void *two);
 
 } DoubleList;
 
@@ -45,9 +46,5 @@ extern void *dlist_remove_element (DoubleList *, ListElement *);
 extern void *dlist_search (DoubleList *, void *data);
 extern bool dlist_is_in_list (DoubleList *, void *data);
 ListElement *dlist_get_ListElement (DoubleList *, void *data);
-
-// FIXME:
-// Sorting
-// extern ListElement *mergeSort (ListElement *head);
 
 #endif

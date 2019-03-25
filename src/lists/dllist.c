@@ -58,7 +58,10 @@ void dlist_destroy (DoubleList *list) {
 
             while (LIST_SIZE (list) > 0) {
                 data = dlist_remove_element (list, NULL);
-                if (data != NULL && list->destroy != NULL) list->destroy (data);
+                if (data) {
+                    if (list->destroy) list->destroy (data);
+                    else free (data);
+                }
             }
         }
 
