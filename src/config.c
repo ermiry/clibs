@@ -38,7 +38,7 @@ static ConfigEntity *config_new_entity (char *buffer, Config *cfg) {
     char *copy = (char *) calloc (strlen (name) + 1, sizeof (char));
     strcpy (copy, name);
     entity->name = copy;
-    entity->keyValuePairs = dlist_init (ConfigKeyValuePair_destroy);
+    entity->keyValuePairs = dlist_init (ConfigKeyValuePair_destroy, NULL);
     dlist_insert_after (cfg->entities, LIST_END (cfg->entities), entity);
 
     return entity;
@@ -74,7 +74,7 @@ Config *config_parse_file (const char *filename) {
         if (configFile == NULL) return NULL;
 
         cfg = (Config *) malloc (sizeof (Config));
-        cfg->entities = dlist_init (free);
+        cfg->entities = dlist_init (ConfigEntity_destroy, NULL);
 
         char buffer[CONFIG_MAX_LINE_LEN];
 
@@ -127,7 +127,7 @@ ConfigEntity *config_get_entity_with_id (Config *cfg, uint32_t id) {
 // add a new key-value pair to the entity
 void config_set_entity_value (ConfigEntity *entity, const char *key, const char *value) {
 
-    if (!entity->keyValuePairs) entity->keyValuePairs = dlist_init (ConfigKeyValuePair_destroy);
+    if (!entity->keyValuePairs) entity->keyValuePairs = dlist_init (ConfigKeyValuePair_destroy, NULL);
 
     ConfigKeyValuePair *kv = (ConfigKeyValuePair *) malloc (sizeof (ConfigKeyValuePair));
     kv->key = strdup (key);
