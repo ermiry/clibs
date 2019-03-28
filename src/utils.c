@@ -59,7 +59,36 @@ char *str_toLower (char *str) {
 
     return temp;
 
-} 
+}
+
+#include <stdarg.h>
+
+char *str_create (const char *stringWithFormat, ...) {
+
+    char *fmt;
+
+    if (stringWithFormat != NULL) fmt = strdup (stringWithFormat);
+    else fmt = strdup ("");
+
+    va_list argp;
+    va_start (argp, stringWithFormat);
+    char oneChar[1];
+    int len = vsnprintf (oneChar, 1, fmt, argp);
+    if (len < 1) return NULL;
+    va_end (argp);
+
+    char *str = (char *) calloc (len + 1, sizeof (char));
+    if (!str) return NULL;
+
+    va_start (argp, stringWithFormat);
+    vsnprintf (str, len + 1, fmt, argp);
+    va_end (argp);
+
+    free (fmt);
+
+    return str;
+
+}
 
 #pragma endregion
 
@@ -67,12 +96,31 @@ char *str_toLower (char *str) {
 
 #pragma region OTHER
 
-void cleanStdin (void) {
+void clean_stdin (void) {
 
     int c;
     do {
         c = getchar();
     } while (c != '\n' && c != EOF);
+
+}
+
+// reads a line from stdin into buffer and returns the lenght
+int read_line (char *buffer, int bsize) {
+
+    int ch, len;
+
+    fgets (buffer, bsize, stdin);
+
+    // remove unwanted characters from the buffer
+    buffer[strcspn (buffer, "\r\n")] = '\0';
+
+    len = strlen (buffer);
+
+    // clean input buffer if needed
+    if (len == bsize - 1) while ((ch = getchar ()) != '\n' && ch != EOF);
+
+    return len;
 
 }
 

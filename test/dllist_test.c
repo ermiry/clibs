@@ -25,7 +25,7 @@ int main (void) {
         dlist_insert_after (list, LIST_START (list), integer);
     }
 
-    list->start = dlist_sort (list->start, list->compare);
+    dlist_sort (list);
     for (ListElement *le = LIST_START (list); le != NULL; le = le->next) {
         Integer *integer = (Integer *) le->data;
         printf ("%3i", integer->value);

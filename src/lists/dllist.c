@@ -260,18 +260,30 @@ static ListElement *dllist_merge (int (*compare)(void *one, void *two),
 } 
 
 // merge sort
-// return 0 on succes 1 on error
-ListElement *dlist_sort (ListElement *head, int (*compare)(void *one, void *two)) {
+ListElement *dlist_merge_sort (ListElement *head, int (*compare)(void *one, void *two)) {
 
     if (!head || !head->next) return head;
 
     ListElement *second = dllist_split (head);
 
     // recursivly sort each half
-    head = dlist_sort (head, compare);
-    second = dlist_sort (second, compare);
+    head = dlist_merge_sort (head, compare);
+    second = dlist_merge_sort (second, compare);
 
     // merge the two sorted halves 
     return dllist_merge (compare, head, second);
+
+}
+
+int dlist_sort (DoubleList *list) {
+
+    int retval = 1;
+
+    if (list && list->compare) {
+        list->start = dlist_merge_sort (list->start, list->compare);
+        retval = 0;
+    }
+
+    return retval;
 
 }

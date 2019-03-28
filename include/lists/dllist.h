@@ -51,6 +51,6 @@ ListElement *dlist_get_ListElement (DoubleList *, void *data);
 
 // merge sort
 // return 0 on succes 1 on error
-extern ListElement *dlist_sort (ListElement *head, int (*compare)(void *one, void *two));
+extern int dlist_sort (DoubleList *list);
 
 #endif
