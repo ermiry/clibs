@@ -40,6 +40,6 @@ extern void config_set_entity_value (ConfigEntity *entity, const char *key, cons
 extern void config_write_file (const char *filename, Config *config);
 
 // destroy a config structure
-extern void clearConfig (Config *);
+extern void config_destroy (Config *cfg);
 
 #endif

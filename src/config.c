@@ -162,11 +162,7 @@ void config_destroy (Config *cfg) {
 
     if (cfg) {
         dlist_destroy (cfg->entities);
-        // clear each entity values
-        for (ListElement *e = LIST_START (cfg->entities); e != NULL; e = e->next)
-            dlist_destroy (((ConfigEntity *) e->data)->keyValuePairs);
 
-        dlist_destroy (cfg->entities);
         free (cfg);
     }
 
