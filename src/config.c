@@ -97,14 +97,20 @@ Config *config_parse_file (const char *filename) {
 /*** RETURN DATA ***/
 
 // get a value for a given key in an entity
+// returns a newly allocated string with the key value
 char *config_get_entity_value (ConfigEntity *entity, const char *key) {
 
+    char *retval = NULL;
     for (ListElement *e = LIST_START (entity->keyValuePairs); e != NULL; e = e->next) {
         ConfigKeyValuePair *kvp = (ConfigKeyValuePair *) e->data;
-        if (strcmp (key, kvp->key) == 0) return kvp->value;
+        if (!strcmp (key, kvp->key)) {
+            retval = (char *) calloc (strlen (kvp->value), sizeof (char));
+            strcpy (retval, kvp->value);
+            return retval;
+        }
     }
 
-    return NULL;
+    return retval;
 
 }
 
