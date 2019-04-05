@@ -103,3 +103,5 @@ void str_to_lower (String *string) {
     if (string) for (int i = 0; i < string->len; i++) string->str[i] = tolower (string->str[i]);
 
 }
+
+int str_compare (const String *s1, const String *s2) { return strcmp (s1->str, s2->str); }

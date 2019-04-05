@@ -18,4 +18,6 @@ extern void str_concat (String *des, String *s1, String *s2);
 extern void str_to_upper (String *string);
 extern void str_to_lower (String *string);
 
+extern int str_compare (const String *s1, const String *s2);
+
 #endif
