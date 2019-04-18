@@ -197,7 +197,7 @@ bool dlist_is_in_list (DoubleList *list, void *data) {
 }
 
 // searches the list and returns the list element associated with the data
-ListElement *dlist_get_ListElement (DoubleList *list, void *data) {
+ListElement *dlist_get_element (DoubleList *list, void *data) {
 
     if (list && data) {
         ListElement *ptr = LIST_START (list);
