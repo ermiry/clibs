@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "../include/lists/dllist.h"
+#include "dllist.h"
 
 typedef struct { int value; } Integer;
 
@@ -22,11 +22,11 @@ int main (void) {
     for (int i = 0; i < 100; i++) {
         Integer *integer = (Integer *) malloc (sizeof (int));
         integer->value = rand () % 99 + 1;
-        dlist_insert_after (list, LIST_START (list), integer);
+        dlist_insert_after (list, dlist_start (list), integer);
     }
 
     dlist_sort (list);
-    for (ListElement *le = LIST_START (list); le != NULL; le = le->next) {
+    for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
         Integer *integer = (Integer *) le->data;
         printf ("%3i", integer->value);
     }

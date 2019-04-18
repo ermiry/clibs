@@ -170,19 +170,9 @@ void *dlist_search (DoubleList *list, void *data) {
 
     if (list && data) {
         ListElement *ptr = dlist_start (list);
-
-        if (list->compare) {
-            while (ptr != NULL) {
-                if (!list->compare (ptr->data, data))  return ptr->data;
-                ptr = ptr->next;
-            }
-        }
-
-        else {
-            while (ptr != NULL) {
-                if (ptr->data == data) return ptr->data;
-                ptr = ptr->next;
-            }
+        while (ptr != NULL) {
+            if (ptr->data == data) return ptr->data;
+            ptr = ptr->next;
         }
 
         return NULL;    // not found
