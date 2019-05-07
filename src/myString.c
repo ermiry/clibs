@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -21,7 +22,7 @@ String *str_new (const char *str) {
         if (str) {
             string->len = strlen (str);
             string->str = (char *) calloc (string->len + 1, sizeof (char));
-            char_copy (string->str, str);
+            char_copy (string->str, (char *) str);
         }
     }
 
@@ -105,3 +106,86 @@ void str_to_lower (String *string) {
 }
 
 int str_compare (const String *s1, const String *s2) { return strcmp (s1->str, s2->str); }
+
+char **str_split (String *string, const char delim, int *n_tokens) {
+
+    char **result = 0;
+    size_t count = 0;
+    char *temp = string->str;
+    char *last = 0;
+    char dlm[2];
+    dlm[0] = delim;
+    dlm[1] = 0;
+
+    // count how many elements will be extracted
+    while (*temp) {
+        if (delim == *temp) {
+            count++;
+            last = temp;
+        }
+
+        temp++;
+    }
+
+    count += last < (string->str + strlen (string->str) - 1);
+
+    count++;
+
+    result = (char **) calloc (count, sizeof (char *));
+    *n_tokens = count;
+
+    if (result) {
+        size_t idx = 0;
+        char *token = strtok (string->str, dlm);
+
+        while (token) {
+            // assert (idx < count);
+            *(result + idx++) = strdup (token);
+            token = strtok (0, dlm);
+        }
+
+        // assert (idx == count - 1);
+        *(result + idx) = 0;
+    }
+
+    return result;
+
+}
+
+void str_remove_char (String *string, char *garbage) {
+
+    char *src, *dst;
+    for (src = dst = string->str; *src != '\0'; src++) {
+        *dst = *src;
+        if (*dst != garbage) dst++;
+    }
+    *dst = '\0';
+
+}
+
+int str_contains (String *string, char *to_find) {
+
+    int slen = string->len;
+    int tFlen = strlen (to_find);
+    int found = 0;
+
+    if( slen >= tFlen )
+    {
+        for (unsigned int s = 0, t = 0; s < slen; s++) {
+            do {
+                if (string->str[s] == to_find[t] ) {
+                    if (++found == tFlen) return 0;
+                    s++;
+                    t++;
+                }
+                else { s -= found; found = 0; t = 0; }
+
+              } while(found);
+        }
+
+        return 1;
+    }
+
+    else return -1;
+
+}

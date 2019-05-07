@@ -20,4 +20,14 @@ extern void str_to_lower (String *string);
 
 extern int str_compare (const String *s1, const String *s2);
 
+extern char **str_split (String *string, const char delim, int *n_tokens);
+
+extern void str_remove_char (String *string, char *garbage);
+
+// check if a string (to_find) is inside string
+// returns 0 on exact match
+// returns 1 if it match the letters but len is different
+// returns -1 if no match
+extern int str_contains (String *string, char *to_find);
+
 #endif
