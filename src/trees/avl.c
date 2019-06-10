@@ -1,11 +1,45 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
 #include "trees/avl.h"
 
-AVLTree *avl_init (CompPointer comparator) {
+void avl_clear_tree (AVLNode **node, void (*destroy)(void *data));
+
+AVLTree *avl_new (void) {
 
     AVLTree *tree = (AVLTree *) malloc (sizeof (AVLTree));
     if (tree) {
+        memset (tree, 0, sizeof (AVLTree));
+        tree->root = NULL;
+        tree->comparator = NULL;
+        tree->destroy = NULL;
+    }
+
+    return tree;
+
+}
+
+void avl_delete (AVLTree *tree) {
+
+    if (tree) {
+        avl_clear_tree (&tree->root, tree->destroy);
+        free (tree);
+    }
+
+}
+
+void avl_set_comparator (AVLTree *tree, Comparator comparator) { if (tree) tree->comparator = comparator; }
+
+void avl_set_destroy (AVLTree *tree, void (*destroy)(void *data)) { if (tree) tree->destroy = destroy; }
+
+AVLTree *avl_init (Comparator comparator, void (*destroy)(void *data)) {
+
+    AVLTree *tree = avl_new ();
+    if (tree) {
         tree->root = NULL;
         tree->comparator = comparator;
+        if (destroy) tree->destroy = destroy;
     }
 
     return tree;
@@ -13,28 +47,26 @@ AVLTree *avl_init (CompPointer comparator) {
 }
 
 // removes all nodes from an avl tree
-void avl_clearTree (AVLNode **node) {
+void avl_clear_tree (AVLNode **node, void (*destroy)(void *data)) {
 
-    if (node) {
+    if (*node) {
         AVLNode *ptr = *node;
-        avl_clearTree (&(ptr->right));
-        avl_clearTree (&(ptr->left));
-        free (ptr->id);
+        avl_clear_tree (&(ptr->right), destroy);
+        avl_clear_tree (&(ptr->left), destroy);
+
+        if (destroy) destroy (ptr->id);
+        else free (ptr->id);
+
         free (ptr);
         *node = NULL;
     }
 
 }
 
-bool avl_isEmpty (AVLTree *tree) {
-
-    if (tree->root != NULL) return false;
-    else return true;
-
-}
+bool avl_is_empty (AVLTree *tree) { return (tree->root ? true : false ); }
 
 // returns content of required node
-void *avl_getNodeData (AVLTree *tree, void *id) {
+void *avl_get_node_data (AVLTree *tree, void *id) {
 
     AVLNode *node = tree->root;
 
@@ -51,26 +83,30 @@ void *avl_getNodeData (AVLTree *tree, void *id) {
 
 }
 
+static void avl_insert_node_r (AVLNode **parent, Comparator comparator, void *id, char *flag) ;
+
 // user function for insertion
-void avl_insertNode (AVLTree *tree, void *data) {
+void avl_insert_node (AVLTree *tree, void *data) {
 
     char flag = 0;
 
-    avl_insertNodeR (&(tree->root), tree->comparator, data, &flag);
+    avl_insert_node_r (&(tree->root), tree->comparator, data, &flag);
 
 }
 
+static void *avl_remove_node_r (AVLTree *tree, AVLNode **parent, Comparator comparator, void *id, char *flag);
+
 // user function to remove a node
-void avl_removeNode (AVLTree *tree, void *data) {
+void *avl_remove_node (AVLTree *tree, void *data) {
 
     char flag = 0;
 
-    avl_removeNodeR (&tree->root, tree->comparator, data, &flag);
+    return avl_remove_node_r (tree, &tree->root, tree->comparator, data, &flag);
 
 }
 
 // returns if the node is in the tree
-bool avl_nodeInTree (AVLTree *tree, void *id) {
+bool avl_node_in_tree (AVLTree *tree, void *id) {
 
     AVLNode *node = tree->root;
     while (node) {
@@ -89,13 +125,13 @@ bool avl_nodeInTree (AVLTree *tree, void *id) {
 #pragma regigion PRIVATE
 
 // TODO: what happens to the data ptr?
-AVLNode *avl_newNode (void *data) {
+static AVLNode *avl_node_new (void *data) {
 
     AVLNode *node = (AVLNode *) malloc (sizeof (AVLNode));
 
     if (node) {
-        node->id = malloc (sizeof (data));
-        memcpy (node->id, data, sizeof (data));
+        node->id = data;
+        // memcpy (node->id, data, sizeof (data));
         node->left = NULL;
         node->right = NULL;
         node->balance = 0;
@@ -105,7 +141,7 @@ AVLNode *avl_newNode (void *data) {
 
 }
 
-void avl_rightTotation (AVLNode **parent) {
+static void avl_right_rotation (AVLNode **parent) {
 
     AVLNode *aux = (*parent)->left;
 
@@ -115,7 +151,7 @@ void avl_rightTotation (AVLNode **parent) {
 
 }
 
-void avl_leftRotation (AVLNode **parent) {
+static void avl_left_rotation (AVLNode **parent) {
 
     AVLNode *aux = (*parent)->right;
 
@@ -126,7 +162,7 @@ void avl_leftRotation (AVLNode **parent) {
 }
 
 // fix balance based on given information
-void avl_balanceFix (AVLNode *parent, int dependency) {
+static void avl_balance_fix (AVLNode *parent, int dependency) {
 
     parent->balance = 0;
 
@@ -149,7 +185,7 @@ void avl_balanceFix (AVLNode *parent, int dependency) {
 }
 
 // verify and treat an insertion in right subtree
-void avl_treatLeftInsertion (AVLNode **parent, char *flag) {
+static void avl_treat_left_insertion (AVLNode **parent, char *flag) {
 
     (*parent)->balance--;
 
@@ -157,16 +193,16 @@ void avl_treatLeftInsertion (AVLNode **parent, char *flag) {
         case 0: *flag = 0; break;
         case -2:
             if ((*parent)->left->balance == -1) {
-                avl_rightRotation (parent);
+                avl_right_rotation (parent);
                 (*parent)->balance = 0;
                 (*parent)->right->balance = 0;
             } 
             
             else {
                 int balance = (*parent)->left->right->balance;
-                avl_leftRotation (&(*parent)->left);
-                avl_rightRotation (parent);
-                avl_balanceFix (*parent, balance);
+                avl_left_rotation (&(*parent)->left);
+                avl_right_rotation (parent);
+                avl_balance_fix (*parent, balance);
             }
             *flag = 0;
             break;
@@ -176,7 +212,7 @@ void avl_treatLeftInsertion (AVLNode **parent, char *flag) {
 }
 
 // verify and treat a insertion in left subtree
-void avl_treatRightInsertion (AVLNode **parent, char *flag) {
+static void avl_treat_right_insertion (AVLNode **parent, char *flag) {
 
     (*parent)->balance++;
 
@@ -184,16 +220,16 @@ void avl_treatRightInsertion (AVLNode **parent, char *flag) {
         case 0: *flag = 0; break;
         case 2:
             if ((*parent)->right->balance == 1) {
-                avl_leftRotation (parent);
+                avl_left_rotation (parent);
                 (*parent)->balance = 0;
                 (*parent)->left->balance = 0;
             } 
             
             else {
                 int balance = (*parent)->right->left->balance;
-                avl_rightRotation (&(*parent)->right);
-                avl_leftRotation (parent);
-                avl_balanceFix (*parent, balance);
+                avl_right_rotation (&(*parent)->right);
+                avl_left_rotation (parent);
+                avl_balance_fix (*parent, balance);
             }
             *flag = 0;
             break;
@@ -202,7 +238,7 @@ void avl_treatRightInsertion (AVLNode **parent, char *flag) {
 }
 
 // verify and treat a removal in left subtree
-void avl_treatLeftReduction (AVLNode **parent, char *flag) {
+static void avl_treat_left_reduction (AVLNode **parent, char *flag) {
 
     (*parent)->balance++;
 
@@ -213,22 +249,22 @@ void avl_treatLeftReduction (AVLNode **parent, char *flag) {
             shortCut = (*parent)->right->balance;
             switch (shortCut) {
                 case 1:
-                    avl_leftRotation (parent);
+                    avl_left_rotation (parent);
                     (*parent)->balance = 0;
                     (*parent)->left->balance = 0;
                     *flag = 1;
                     break;
                 case 0:
-                    avl_leftRotation (parent);
+                    avl_left_rotation (parent);
                     (*parent)->balance = -1;
                     (*parent)->left->balance = 1;
                     *flag = 0;
                     break;
                 case -1:
                     shortCut = (*parent)->right->left->balance;
-                    avl_rightRotation (&(*parent)->right);
-                    avl_leftRotation (parent);
-                    avl_balanceFix (*parent, shortCut);
+                    avl_right_rotation (&(*parent)->right);
+                    avl_left_rotation (parent);
+                    avl_balance_fix (*parent, shortCut);
                     *flag = 1;
                     break;
             }
@@ -239,7 +275,7 @@ void avl_treatLeftReduction (AVLNode **parent, char *flag) {
 }
 
 // verify and treat a removal in right subtree
-void avl_treatRightReduction (AVLNode **parent, char *flag) {
+static void avl_treat_right_reduction (AVLNode **parent, char *flag) {
 
     (*parent)->balance--;
 
@@ -250,22 +286,22 @@ void avl_treatRightReduction (AVLNode **parent, char *flag) {
             shortCut = (*parent)->left->balance;
             switch (shortCut) {
                 case -1:
-                    avl_rightRotation (parent);
+                    avl_right_rotation (parent);
                     (*parent)->balance = 0;
                     (*parent)->right->balance = 0;
                     *flag = 1;
                     break;
                 case 0:
-                    avl_rightRotation(parent);
+                    avl_right_rotation(parent);
                     (*parent)->balance = 1;
                     (*parent)->right->balance = -1;
                     *flag = 0;
                     break;
                 case 1:
                     shortCut = (*parent)->left->right->balance;
-                    avl_leftRotation (&(*parent)->left);
-                    avl_rightRotation (parent);
-                    avl_balanceFix (*parent, shortCut);
+                    avl_left_rotation (&(*parent)->left);
+                    avl_right_rotation (parent);
+                    avl_balance_fix (*parent, shortCut);
                     *flag  = 1;
                     break;
             }
@@ -276,11 +312,11 @@ void avl_treatRightReduction (AVLNode **parent, char *flag) {
 }
 
 // recursive function to insert in the tree
-void avl_insertNodeR (AVLNode **parent, CompPointer comparator, void *id, char *flag) {
+static void avl_insert_node_r (AVLNode **parent, Comparator comparator, void *id, char *flag) {
 
     // we are on a leaf, create node and set flag
     if (*parent == NULL){
-        *parent = avl_newNode (id);
+        *parent = avl_node_new (id);
         *flag = 1;
     } 
     
@@ -288,15 +324,15 @@ void avl_insertNodeR (AVLNode **parent, CompPointer comparator, void *id, char *
         switch (comparator ((*parent)->id, id)){
             // go left
             case 1:
-                avl_insertNodeR (&(*parent)->left, comparator, id, flag);
-                if (*flag == 1) avl_treatLeftInsertion (&(*parent), flag);
+                avl_insert_node_r (&(*parent)->left, comparator, id, flag);
+                if (*flag == 1) avl_treat_left_insertion (&(*parent), flag);
                 break;
 
             // go right
             case -1:
             case  0:
-                avl_insertNodeR (&(*parent)->right, comparator, id, flag);
-                if (*flag == 1) avl_treatRightInsertion (&(*parent), flag);
+                avl_insert_node_r (&(*parent)->right, comparator, id, flag);
+                if (*flag == 1) avl_treat_right_insertion (&(*parent), flag);
                 break;
 
             default: break;
@@ -306,20 +342,21 @@ void avl_insertNodeR (AVLNode **parent, CompPointer comparator, void *id, char *
 }
 
 // recursive function to remove a node from the tree
-void avl_removeNodeR (AVLNode **parent, CompPointer comparator, void *id, char *flag) {
+static void *avl_remove_node_r (AVLTree *tree, AVLNode **parent, Comparator comparator, void *id, char *flag) {
 
     //Wrong way
-    if (*parent != NULL){
-
+    if (*parent != NULL) {
         switch (comparator ((*parent)->id, id)) {
-            case 1:
-                avl_removeNodeR (&(*parent)->left, comparator, id, flag);
-                if (*flag == 1) avl_treatLeftReduction (&(*parent), flag);
-                break;
-            case -1:
-                avl_removeNodeR (&(*parent)->right, comparator, id, flag);
-                if (*flag == 1) avl_treatRightReduction (&(*parent), flag);
-                break;
+            case 1: {
+                void *data = avl_remove_node_r (tree, &(*parent)->left, comparator, id, flag);
+                if (*flag == 1) avl_treat_left_reduction (&(*parent), flag);
+                return data;
+            }   
+            case -1: {
+                void *data = avl_remove_node_r (tree, &(*parent)->right, comparator, id, flag);
+                if (*flag == 1) avl_treat_right_reduction (&(*parent), flag);
+                return data;
+            }
             case 0:
                 if ((*parent)->right != NULL && (*parent)->left != NULL) {
                     AVLNode *ptr = (*parent)->right, copy = *(*parent);
@@ -329,29 +366,34 @@ void avl_removeNodeR (AVLNode **parent, CompPointer comparator, void *id, char *
                     (*parent)->id = ptr->id;
                     ptr->id = copy.id;
 
-                    avl_removeNodeR (&(*parent)->right, comparator, id, flag);
+                    return avl_remove_node_r (tree, &(*parent)->right, comparator, id, flag);
                 }
                 
                 else {
-                    if ((*parent)->left != NULL){
+                    void *data = NULL;
+
+                    if ((*parent)->left != NULL) {
                         AVLNode *p = (*parent)->left;
                         *(*parent) = *(*parent)->left;
-                        free(p);
+                        free (p);
 
                     } 
                     
                     else if ((*parent)->right != NULL) {
                         AVLNode* p = (*parent)->right;
                         *(*parent) = *(*parent)->right;
-                        free(p);
+                        free (p);
                     } 
                     
                     else {
-                        free ((*parent)->id);
+                        // if (tree->destroy) tree->destroy ((*parent)->id);
+                        // else free ((*parent)->id);
+                        data = (*parent)->id;
                         free (*parent);
                         *parent = NULL;
                     }
                     *flag = 1;
+                    return data;
                 }
                 break;
 
