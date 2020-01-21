@@ -1,8 +1,69 @@
 #include <stdlib.h>
+#include <stdio.h>
+
+#include <unistd.h>
+#include <errno.h>
+#include <pthread.h>
 
 #include "../../include/lists/dllist.h"
 
-void *dlist_remove_element (DoubleList *dlist, ListElement *element);
+static inline void list_element_delete (ListElement *le);
+
+#pragma region internal
+
+static void *dlist_internal_remove_element (DoubleList *dlist, ListElement *element) {
+
+    if (dlist) {
+        void *data = NULL;
+        if (dlist_size (dlist) > 0) {
+            ListElement *old;
+
+            if (element == NULL) {
+                data = dlist->start->data;
+                old = dlist->start;
+                dlist->start = dlist->start->next;
+                if (dlist->start != NULL) dlist->start->prev = NULL;
+            }
+
+            else {
+                data = element->data;
+                old = element;
+
+                ListElement *prevElement = element->prev;
+                ListElement *nextElement = element->next;
+
+                if (prevElement != NULL && nextElement != NULL) {
+                    prevElement->next = nextElement;
+                    nextElement->prev = prevElement;
+                }
+
+                else {
+                    // we are at the start of the dlist
+                    if (prevElement == NULL) {
+                        if (nextElement != NULL) nextElement->prev = NULL;
+                        dlist->start = nextElement;
+                    }
+
+                    // we are at the end of the dlist
+                    if (nextElement == NULL) {
+                        if (prevElement != NULL) prevElement->next = NULL;
+                        dlist->end = prevElement;
+                    }
+                }
+            }
+
+            list_element_delete (old);
+            dlist->size--;
+        }
+
+        return data;
+    }
+
+    return NULL;
+
+}
+
+#pragma endregion
 
 static ListElement *list_element_new (void) {
 
@@ -38,17 +99,23 @@ void dlist_delete (void *dlist_ptr) {
     if (dlist_ptr) {
         DoubleList *dlist = (DoubleList *) dlist_ptr;
 
+        pthread_mutex_lock (dlist->mutex);
+
         if (dlist->size > 0) {
             void *data = NULL;
 
             while (dlist_size (dlist) > 0) {
-                data = dlist_remove_element (dlist, NULL);
+                data = dlist_internal_remove_element (dlist, NULL);
                 if (data) {
                     if (dlist->destroy) dlist->destroy (data);
                     else free (data);
                 }
             }
         }
+
+        pthread_mutex_unlock (dlist->mutex);
+        pthread_mutex_destroy (dlist->mutex);
+        free (dlist->mutex);
 
         free (dlist);
     }
@@ -65,7 +132,10 @@ DoubleList *dlist_init (void (*destroy)(void *data), int (*compare)(const void *
 
     if (dlist) {
         dlist->destroy = destroy;
-        dlist->compare = compare; 
+        dlist->compare = compare;
+
+        dlist->mutex = (pthread_mutex_t *) malloc (sizeof (pthread_mutex_t));
+        pthread_mutex_init (dlist->mutex, NULL);
     }
 
     return dlist;
@@ -109,7 +179,11 @@ void dlist_clean (DoubleList *dlist) {
 // returns true on success, false on error or not found
 bool dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
 
+    bool retval = false;
+
     if (dlist && data) {
+        pthread_mutex_lock (dlist->mutex);
+
         ListElement *le = list_element_new ();
         if (le) {
             le->data = (void *) data;
@@ -133,11 +207,13 @@ bool dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
 
             dlist->size++;
 
-            return true;
+            retval = true;
         }
+
+        pthread_mutex_unlock (dlist->mutex);
     }
 
-    return false;
+    return retval;
 
 }
 
@@ -149,6 +225,8 @@ int dlist_remove (DoubleList *dlist, void *query) {
     int retval = 1;
 
     if (dlist && query) {
+        pthread_mutex_lock (dlist->mutex);
+
         ListElement *ptr = dlist_start (dlist);
 
         if (dlist->compare) {
@@ -171,6 +249,8 @@ int dlist_remove (DoubleList *dlist, void *query) {
                 first = false;
             }
         }
+
+        pthread_mutex_unlock (dlist->mutex);
     }
 
     return retval;
@@ -182,49 +262,13 @@ int dlist_remove (DoubleList *dlist, void *query) {
 void *dlist_remove_element (DoubleList *dlist, ListElement *element) {
 
     if (dlist) {
-        if (dlist_size (dlist) > 0) {
-            ListElement *old;
-            void *data = NULL;
+        pthread_mutex_lock (dlist->mutex);
 
-            if (element == NULL) {
-                data = dlist->start->data;
-                old = dlist->start;
-                dlist->start = dlist->start->next;
-                if (dlist->start != NULL) dlist->start->prev = NULL;
-            }
+        void *data = dlist_internal_remove_element (dlist, NULL);
 
-            else {
-                data = element->data;
-                old = element;
+        pthread_mutex_unlock (dlist->mutex);
 
-                ListElement *prevElement = element->prev;
-                ListElement *nextElement = element->next;
-
-                if (prevElement != NULL && nextElement != NULL) {
-                    prevElement->next = nextElement;
-                    nextElement->prev = prevElement;
-                }
-
-                else {
-                    // we are at the start of the dlist
-                    if (prevElement == NULL) {
-                        if (nextElement != NULL) nextElement->prev = NULL;
-                        dlist->start = nextElement;
-                    }
-
-                    // we are at the end of the dlist
-                    if (nextElement == NULL) {
-                        if (prevElement != NULL) prevElement->next = NULL;
-                        dlist->end = prevElement;
-                    }
-                }
-            }
-
-            list_element_delete (old);
-            dlist->size--;
-
-            return data;
-        }
+        return data;
     }
 
     return NULL;

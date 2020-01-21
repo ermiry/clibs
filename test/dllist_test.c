@@ -41,7 +41,7 @@ static void *test_thread_add (void *args) {
 		DoubleList *list = (DoubleList *) args;
 
 		// add ten items at the list end
-		for (unsigned int i = 0; i < 10; i++) {
+		for (unsigned int i = 0; i < 1000; i++) {
 			Integer *integer = (Integer *) malloc (sizeof (int));
 			// integer->value = rand () % 99 + 1;
 			integer->value = i;
@@ -57,7 +57,7 @@ static void *test_thread_remove (void *args) {
 		DoubleList *list = (DoubleList *) args;
 
 		// remove 5 items from the start of the list
-		for (unsigned int i = 0; i < 5; i++) {
+		for (unsigned int i = 0; i < 500; i++) {
 			dlist_remove_element (list, dlist_start (list));
 		}
 	}
@@ -89,13 +89,17 @@ static void test_thread_safe (void) {
 	pthread_create (&threads[2], NULL, test_thread_add, list);
 	pthread_create (&threads[3], NULL, test_thread_remove, list);
 
+	for (unsigned int i = 0; i < N_THREADS; i++) {
+		pthread_join (threads[i], NULL);
+	}
+
 	// get how many items are on the list, we expect 40 if all add ten items
 	printf ("\nActual items in list: %ld\n", dlist_size (list));
 	Integer *integer = NULL;
-	for (ListElement *le = dlist_start (list); le; le = le->next) {
-		integer = (Integer *) le->data;
-		printf ("%3i", integer->value);
-	}
+	// for (ListElement *le = dlist_start (list); le; le = le->next) {
+	// 	integer = (Integer *) le->data;
+	// 	printf ("%6i", integer->value);
+	// }
 
 	// 21/01/2020 -- 15:09 -- we get a segfault every other time and NOT all items get inserted when that happens
 	dlist_delete (list);

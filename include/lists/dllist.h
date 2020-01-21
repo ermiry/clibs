@@ -2,6 +2,7 @@
 #define _COLLECTIONS_DLIST_H_
 
 #include <stdbool.h>
+#include <pthread.h>
 
 typedef struct ListElement {
 
@@ -20,6 +21,8 @@ typedef struct DoubleList {
 
     void (*destroy)(void *data);
     int (*compare)(const void *one, const void *two);
+
+    pthread_mutex_t *mutex;
 
 } DoubleList;
 
