@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "lists/dllist.h"
+#include "../../include/lists/dllist.h"
 
 void *dlist_remove_element (DoubleList *dlist, ListElement *element);
 

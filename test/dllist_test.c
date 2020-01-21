@@ -3,19 +3,17 @@
 #include <string.h>
 #include <time.h>
 
-#include "dllist.h"
+#include "../include/lists/dllist.h"
 
 typedef struct { int value; } Integer;
 
-int compare_int (void *one, void *two) {
+int compare_int (const void *one, const void *two) {
 
     if (one && two) return ((Integer *) one)->value <= ((Integer *) two)->value ? 0 : 1;
 
 }
 
-int main (void) {
-
-    srand ((unsigned) time (NULL));
+static void test_sort (void) {
 
     DoubleList *list = dlist_init (NULL, compare_int);
 
@@ -31,7 +29,20 @@ int main (void) {
         printf ("%3i", integer->value);
     }
     
-    dlist_destroy (list);
+    dlist_delete (list);
+
+}
+
+// uncomment the function that represents the test you want to run and the follow these steps
+// from test directory...
+// mkdir bin
+// to compile run: gcc ./test/dllist_test.c ./src/lists/dllist.c -o ./bin/dllist_test
+// and run using: ./bin/dllist_test
+int main (void) {
+
+    srand ((unsigned) time (NULL));
+
+    test_sort ();
 
     return 0;
 
