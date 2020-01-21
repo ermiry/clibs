@@ -51,6 +51,19 @@ static void *test_thread_add (void *args) {
 
 }
 
+static void *test_thread_remove (void *args) {
+
+	if (args) {
+		DoubleList *list = (DoubleList *) args;
+
+		// remove 5 items from the start of the list
+		for (unsigned int i = 0; i < 5; i++) {
+			dlist_remove_element (list, dlist_start (list));
+		}
+	}
+
+}
+
 static void test_thread_safe (void) {
 
 	// create a global list
@@ -59,16 +72,24 @@ static void test_thread_safe (void) {
 	// create 4 threads
 	const unsigned int N_THREADS = 4;
 	pthread_t threads[N_THREADS];
-	for (unsigned int i = 0; i < N_THREADS; i++) {
-		pthread_create (&threads[i], NULL, test_thread_add, list);
-	}
+	// for (unsigned int i = 0; i < N_THREADS; i++) {
+	// 	pthread_create (&threads[i], NULL, test_thread_add, list);
+	// }
 
-	// join the threads
-	for (unsigned int i = 0; i < N_THREADS; i++) {
-		pthread_join (threads[i], NULL);
-	}
+	// // join the threads
+	// for (unsigned int i = 0; i < N_THREADS; i++) {
+	// 	pthread_join (threads[i], NULL);
+	// }
 
-	// get how many items are on the list, we expect 40
+	// 21/01/2020 -- 15:15 -- some times getting seg fault, other we get wrong list size,
+	// and other times we are printing a wrong number of items
+	// the correct values should be size: 10 and ten integers getting printed to the console
+	pthread_create (&threads[0], NULL, test_thread_add, list);
+	pthread_create (&threads[1], NULL, test_thread_remove, list);
+	pthread_create (&threads[2], NULL, test_thread_add, list);
+	pthread_create (&threads[3], NULL, test_thread_remove, list);
+
+	// get how many items are on the list, we expect 40 if all add ten items
 	printf ("\nActual items in list: %ld\n", dlist_size (list));
 	Integer *integer = NULL;
 	for (ListElement *le = dlist_start (list); le; le = le->next) {
