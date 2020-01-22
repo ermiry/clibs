@@ -11,11 +11,55 @@ typedef struct { int value; } Integer;
 
 int compare_int (const void *one, const void *two) {
 
-	if (one && two) return ((Integer *) one)->value <= ((Integer *) two)->value ? 0 : 1;
+	if (one && two) {
+		Integer *int_a = (Integer *) one;
+		Integer *int_b = (Integer *) two;
+
+		if (int_a->value < int_b->value) return -1;
+		else if (int_a->value == int_b->value) return 0;
+		else return 1;
+	}
 
 }
 
-static void test_sort (void) {
+static int test_remove (void) {
+
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 1000; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		// integer->value = rand () % 99 + 1;
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	printf ("\nItems in list: %ld\n", dlist_size (list));
+	// for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+	// 	Integer *integer = (Integer *) le->data;
+	// 	printf ("%3i", integer->value);
+	// }
+
+	Integer *query = (Integer *) malloc (sizeof (int));
+	if (query) {
+		query->value = 5;
+		dlist_remove (list, query);
+		free (query);
+	}
+
+	// printf ("\n\n");
+	printf ("\nItems in list: %ld\n", dlist_size (list));
+	// for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+	// 	Integer *integer = (Integer *) le->data;
+	// 	printf ("%3i", integer->value);
+	// }
+	
+	dlist_delete (list);
+
+	return 0;
+
+}
+
+static int test_sort (void) {
 
 	DoubleList *list = dlist_init (NULL, compare_int);
 
@@ -32,6 +76,8 @@ static void test_sort (void) {
 	}
 	
 	dlist_delete (list);
+
+	return 0;
 
 }
 
@@ -64,7 +110,7 @@ static void *test_thread_remove (void *args) {
 
 }
 
-static void test_thread_safe (void) {
+static int test_thread_safe (void) {
 
 	// create a global list
 	DoubleList *list = dlist_init (NULL, compare_int);
@@ -112,6 +158,8 @@ static void test_thread_safe (void) {
 	// 21/01/2020 -- 15:09 -- we get a segfault every other time and NOT all items get inserted when that happens
 	dlist_delete (list);
 
+	return 0;
+
 }
 
 // uncomment the function that represents the test you want to run and the follow these steps
@@ -123,9 +171,11 @@ int main (void) {
 
 	srand ((unsigned) time (NULL));
 
-	// test_sort ();
+	return test_remove ();
 
-	test_thread_safe ();
+	// return test_sort ();
+
+	// return test_thread_safe ();
 
 	return 0;
 

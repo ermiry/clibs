@@ -235,14 +235,16 @@ int dlist_remove (DoubleList *dlist, void *query) {
                 if (!dlist->compare (ptr->data, query)) {
                     // remove the list element
                     void *data = NULL;
-                    if (first) data = dlist_remove_element (dlist, NULL);
-                    else data = dlist_remove_element (dlist, ptr);
+                    if (first) data = dlist_internal_remove_element (dlist, NULL);
+                    else data = dlist_internal_remove_element (dlist, ptr);
                     if (data) {
                         if (dlist->destroy) dlist->destroy (data);
                         else free (data);
 
                         retval = 0;
                     }
+
+                    break;
                 }
 
                 ptr = ptr->next;
