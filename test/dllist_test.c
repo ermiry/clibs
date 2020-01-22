@@ -87,7 +87,7 @@ static void *test_thread_add (void *args) {
 		DoubleList *list = (DoubleList *) args;
 
 		// add ten items at the list end
-		for (unsigned int i = 0; i < 1000; i++) {
+		for (unsigned int i = 0; i < 100; i++) {
 			Integer *integer = (Integer *) malloc (sizeof (int));
 			// integer->value = rand () % 99 + 1;
 			integer->value = i;
@@ -103,7 +103,7 @@ static void *test_thread_remove (void *args) {
 		DoubleList *list = (DoubleList *) args;
 
 		// remove 5 items from the start of the list
-		for (unsigned int i = 0; i < 500; i++) {
+		for (unsigned int i = 0; i < 50; i++) {
 			dlist_remove_element (list, dlist_start (list));
 		}
 	}
@@ -118,7 +118,7 @@ static void *test_thread_search (void *args) {
 		// get 10 random values from the list
 		for (unsigned int i = 0; i < 10; i++) {
 			Integer *integer = (Integer *) malloc (sizeof (int));
-			integer->value = rand () % 999 + 1;
+			integer->value = rand () % 99 + 1;
 
 			printf ("Searching: %d...\n", integer->value);
 			Integer *search = (Integer *) dlist_search (list, integer);
@@ -147,6 +147,16 @@ static void *test_thread_get_element (void *args) {
 
 			free (integer);
 		}
+	}
+
+}
+
+static void *test_thread_sort (void *args) {
+
+	if (args) {
+		DoubleList *list = (DoubleList *) args;
+
+		dlist_sort (list);
 	}
 
 }
@@ -191,13 +201,20 @@ static int test_thread_safe (void) {
 	// 22/01/2020 -- 3:14 -- this has no problem
 	pthread_create (&threads[0], NULL, test_thread_add, list);
 	pthread_create (&threads[1], NULL, test_thread_remove, list);
-	// pthread_create (&threads[2], NULL, test_thread_search, list);
-	pthread_create (&threads[2], NULL, test_thread_get_element, list);
+	pthread_create (&threads[2], NULL, test_thread_search, list);
+	// pthread_create (&threads[2], NULL, test_thread_get_element, list);
+	// pthread_create (&threads[3], NULL, test_thread_sort, list);
 	pthread_join (threads[0], NULL);
 	pthread_join (threads[1], NULL);
 	pthread_join (threads[2], NULL);
+	// pthread_join (threads[3], NULL);
 
 	printf ("\nItems in list: %ld\n", dlist_size (list));
+	dlist_sort (list);
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3i", integer->value);
+	}
 
 	// 21/01/2020 -- 15:09 -- we get a segfault every other time and NOT all items get inserted when that happens
 	dlist_delete (list);

@@ -146,10 +146,12 @@ DoubleList *dlist_init (void (*destroy)(void *data), int (*compare)(const void *
 void dlist_reset (DoubleList *dlist) {
 
     if (dlist) {
+        pthread_mutex_lock (dlist->mutex);
+
         if (dlist_size (dlist) > 0) {
             void *data = NULL;
             while (dlist_size (dlist) > 0) {
-                data = dlist_remove_element (dlist, NULL);
+                data = dlist_internal_remove_element (dlist, NULL);
                 if (data != NULL && dlist->destroy != NULL) dlist->destroy (data);
             }
         }
@@ -157,6 +159,8 @@ void dlist_reset (DoubleList *dlist) {
         dlist->start = NULL;
         dlist->end = NULL;
         dlist->size = 0;
+
+        pthread_mutex_unlock (dlist->mutex);
     }
 
 }
@@ -166,9 +170,13 @@ void dlist_reset (DoubleList *dlist) {
 void dlist_clean (DoubleList *dlist) {
 
     if (dlist) {
+        pthread_mutex_lock (dlist->mutex);
+
         void *data = NULL;
         while (dlist_size (dlist) > 0) 
-            data = dlist_remove_element (dlist, NULL);
+            data = dlist_internal_remove_element (dlist, NULL);
+
+        pthread_mutex_unlock (dlist->mutex);
     }
 
 }
@@ -394,13 +402,19 @@ static ListElement *dlist_merge_sort (ListElement *head,
 
 }
 
+// uses merge sort to sort the list using the comparator
+// return 0 on succes 1 on error
 int dlist_sort (DoubleList *dlist) {
 
     int retval = 1;
 
     if (dlist && dlist->compare) {
+        pthread_mutex_lock (dlist->mutex);
+
         dlist->start = dlist_merge_sort (dlist->start, dlist->compare);
         retval = 0;
+
+        pthread_mutex_unlock (dlist->mutex);
     }
 
     return retval;
