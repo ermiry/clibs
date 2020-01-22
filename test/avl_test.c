@@ -162,9 +162,10 @@ static int test_insert_rand_values (void) {
 }
 
 // uncomment the function that represents the test you want to run and the follow these steps
-// from main directory...
+// from the test directory
 // mkdir bin
-// to compile run: gcc ./test/avl_test.c ./src/collections/avl.c -l pthread -o ./bin/avl_test
+// to compile run: gcc ./avl_test.c ../src/collections/avl.c -l pthread -o ./bin/avl_test
+// or compile all tests using the Makefile
 // and run using: ./bin/avl_test
 int main (void) {
 

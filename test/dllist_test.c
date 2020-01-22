@@ -226,9 +226,10 @@ static int test_thread_safe (void) {
 }
 
 // uncomment the function that represents the test you want to run and the follow these steps
-// from main directory...
+// from test directory...
 // mkdir bin
-// to compile run: gcc ./test/dllist_test.c ./src/collections/dllist.c -l pthread -o ./bin/dllist_test
+// to compile run: gcc ./dllist_test.c ../src/collections/dllist.c -l pthread -o ./bin/dllist_test
+// or compile all tests using the Makefile
 // and run using: ./bin/dllist_test
 int main (void) {
 
