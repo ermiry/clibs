@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#include "../include/string.h"
+#include "../include/types/string.h"
 
 static inline void char_copy (char *to, char *from) {
 

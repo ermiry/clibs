@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "lists/dllist.h"
-#include "config.h"
+#include "../include/utils/config.h"
 
 static void config_key_value_delete (void *ptr) {
 

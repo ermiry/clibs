@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/utils.h"
-#include "../include/log.h"
+#include "../include/utils/utils.h"
+#include "../include/utils/log.h"
 
 static char *log_get_msg_type (LogMsgType type) {
 

@@ -8,7 +8,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#include "../include/utils.h"
+#include "../include/utils/utils.h"
 
 /*** misc ***/
 
