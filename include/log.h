@@ -1,7 +1,6 @@
-#ifndef LOG_H
-#define LOG_H
+#ifndef _UTILS_LOG_H_
+#define _UTILS_LOG_H_
 
-#include <stdlib.h>
 #include <stdio.h>
 
 #define COLOR_RED       "\x1b[31m"
@@ -14,19 +13,29 @@
 
 typedef enum LogMsgType {
 
-	NO_TYPE = 0,
+	LOG_NO_TYPE             = 0,
 
-    ERROR = 1,
-    WARNING,
-    SUCCESS,
-    DEBUG_MSG,
-    TEST
+	LOG_ERROR               = 1,
+	LOG_WARNING             = 2,
+	LOG_SUCCESS             = 3,
+	LOG_DEBUG               = 4,
+	LOG_TEST                = 5,
 
 } LogMsgType;
 
-extern void logMsg (FILE *__restrict __stream, LogMsgType firstType, LogMsgType secondType,
-    const char *msg);
+extern void log_msg (FILE *__restrict __stream, LogMsgType firstType, LogMsgType secondType,
+	const char *msg);
 
-extern char *createString (const char *stringWithFormat, ...);
+// prints a red error message to stderr
+extern void log_error (const char *msg);
+
+// prints a yellow warning message to stderr
+extern void log_warning (const char *msg);
+
+// prints a green success message to stdout
+extern void log_success (const char *msg);
+
+// prints a debug message to stdout
+extern void log_debug (const char *msg);
 
 #endif

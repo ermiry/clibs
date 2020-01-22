@@ -1,89 +1,91 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 
-#include "log.h"
+#include "../include/utils.h"
+#include "../include/log.h"
 
-char *createString (const char *stringWithFormat, ...) {
+static char *log_get_msg_type (LogMsgType type) {
 
-    char *fmt;
+	char temp[15];
 
-    if (stringWithFormat != NULL) fmt = strdup (stringWithFormat);
-    else fmt = strdup ("");
+	switch (type) {
+		case LOG_ERROR: strcpy (temp, "[ERROR]"); break;
+		case LOG_WARNING: strcpy (temp, "[WARNING]"); break;
+		case LOG_SUCCESS: strcpy (temp, "[SUCCESS]"); break;
+		case LOG_DEBUG: strcpy (temp, "[DEBUG]"); break;
+		case LOG_TEST: strcpy (temp, "[TEST]"); break;
 
-    va_list argp;
-    va_start (argp, stringWithFormat);
-    char oneChar[1];
-    int len = vsnprintf (oneChar, 1, fmt, argp);
-    if (len < 1) return NULL;
-    va_end (argp);
+		default: break;
+	}
 
-    char *str = (char *) calloc (len + 1, sizeof (char));
-    if (!str) return NULL;
+	char *retval = (char *) calloc (strlen (temp) + 1, sizeof (temp));
+	strcpy (retval, temp);
 
-    va_start (argp, stringWithFormat);
-    vsnprintf (str, len + 1, fmt, argp);
-    va_end (argp);
-
-    free (fmt);
-
-    return str;
+	return retval;
 
 }
 
-char *getMsgType (LogMsgType type) {
+void log_msg (FILE *__restrict __stream, LogMsgType firstType, LogMsgType secondType,
+	const char *msg) {
 
-    char temp[10];
+	char *first = log_get_msg_type (firstType);
+	char *second = NULL;
+	char *message = NULL;
 
-    switch (type) {
-        case ERROR: strcpy (temp, "[ERROR]"); break;
-        case WARNING: strcpy (temp, "[WARNING]"); break;
-        case SUCCESS: strcpy (temp, "[SUCCESS]"); break;
-        case DEBUG_MSG: strcpy (temp, "[DEBUG]"); break;
-        case TEST: strcpy (temp, "[TEST]"); break;
+	if (secondType != 0) {
+		second = log_get_msg_type (secondType);
 
-        default: break;
-    }
+		if (firstType == LOG_DEBUG)
+			message = c_string_create ("%s: %s\n", second, msg);
+		
+		else message = c_string_create ("%s%s: %s\n", first, second, msg);
+	}
 
-    char *retval = (char *) calloc (strlen (temp) + 1, sizeof (temp));
-    strcpy (retval, temp);
+	else if (firstType != LOG_DEBUG)
+		message = c_string_create ("%s: %s\n", first, msg);
 
-    return retval;
+	// log messages with color
+	switch (firstType) {
+		case LOG_DEBUG: 
+			fprintf (__stream, COLOR_MAGENTA "%s: " COLOR_RESET "%s\n", first, msg); break;
+		
+		case LOG_TEST:
+			fprintf (__stream, COLOR_CYAN "%s: " COLOR_RESET "%s\n", first, msg); break;
+
+		case LOG_ERROR: fprintf (__stream, COLOR_RED "%s" COLOR_RESET, message); break;
+		case LOG_WARNING: fprintf (__stream, COLOR_YELLOW "%s" COLOR_RESET, message); break;
+		case LOG_SUCCESS: fprintf (__stream, COLOR_GREEN "%s" COLOR_RESET, message); b		default: fprintf (__stream, "%s", message); break;
+	}
+
+	if (message) free (message);
 
 }
 
-void logMsg (FILE *__restrict __stream, LogMsgType firstType, LogMsgType secondType,
-    const char *msg) {
+// prints a red error message to stderr
+void log_error (const char *msg) {
 
-    char *first = getMsgType (firstType);
-    char *second = NULL;
-    char *message = NULL;
+	if (msg) fprintf (stderr, COLOR_RED "%s\n" COLOR_RESET, msg);
 
-    if (secondType != 0) {
-        second = getMsgType (secondType);
+}
 
-        if (firstType == DEBUG_MSG)
-            message = createString ("%s: %s\n", second, msg);
-        
-        else message = createString ("%s%s: %s\n", first, second, msg);
-    }
+// prints a yellow warning message to stderr
+void log_warning (const char *msg) {
 
-    else if (firstType != DEBUG_MSG)
-        message = createString ("%s: %s\n", first, msg);
+	if (msg) fprintf (stderr, COLOR_YELLOW "%s\n" COLOR_RESET, msg);
 
-    // log messages with color
-    switch (firstType) {
-        case DEBUG_MSG: 
-            fprintf (__stream, COLOR_MAGENTA "%s: " COLOR_RESET "%s\n", first, msg); break;
+}
 
-        case ERROR: fprintf (__stream, COLOR_RED "%s" COLOR_RESET, message); break;
-        case WARNING: fprintf (__stream, COLOR_YELLOW "%s" COLOR_RESET, message); break;
-        case SUCCESS: fprintf (__stream, COLOR_GREEN "%s" COLOR_RESET, message); break;
+// prints a green success message to stdout
+void log_success (const char *msg) {
 
-        default: fprintf (__stream, "%s", message); break;
-    }
+	if (msg) fprintf (stdout, COLOR_GREEN "%s\n" COLOR_RESET, msg);
 
-    if (message) free (message);
+}
+
+// prints a debug message to stdout
+void log_debug (const char *msg) {
+
+	if (msg) fprintf (stdout, COLOR_MAGENTA "[DEBUG]: " COLOR_RESET "%s\n", msg);
 
 }

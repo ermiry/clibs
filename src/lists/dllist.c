@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <unistd.h>
-#include <errno.h>
 #include <pthread.h>
 
 #include "../../include/lists/dllist.h"
