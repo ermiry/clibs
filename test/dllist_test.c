@@ -85,21 +85,29 @@ static void test_thread_safe (void) {
 	// and other times we are printing a wrong number of items
 	// the correct values should be size: 10 and ten integers getting printed to the console
 	pthread_create (&threads[0], NULL, test_thread_add, list);
-	pthread_create (&threads[1], NULL, test_thread_remove, list);
-	pthread_create (&threads[2], NULL, test_thread_add, list);
-	pthread_create (&threads[3], NULL, test_thread_remove, list);
+	pthread_create (&threads[1], NULL, test_thread_add, list);
+	// pthread_create (&threads[2], NULL, test_thread_remove, list);
+	// pthread_create (&threads[3], NULL, test_thread_remove, list);
 
-	for (unsigned int i = 0; i < N_THREADS; i++) {
+	for (unsigned int i = 0; i < 2; i++) {
 		pthread_join (threads[i], NULL);
 	}
 
 	// get how many items are on the list, we expect 40 if all add ten items
-	printf ("\nActual items in list: %ld\n", dlist_size (list));
+	printf ("\nItems in list: %ld\n", dlist_size (list));
 	Integer *integer = NULL;
 	// for (ListElement *le = dlist_start (list); le; le = le->next) {
 	// 	integer = (Integer *) le->data;
 	// 	printf ("%6i", integer->value);
 	// }
+
+	// 22/01/2020 -- 3:14 -- this has no problem
+	pthread_create (&threads[0], NULL, test_thread_add, list);
+	pthread_create (&threads[2], NULL, test_thread_remove, list);
+	pthread_join (threads[0], NULL);
+	pthread_join (threads[2], NULL);
+
+	printf ("\nItems in list: %ld\n", dlist_size (list));
 
 	// 21/01/2020 -- 15:09 -- we get a segfault every other time and NOT all items get inserted when that happens
 	dlist_delete (list);

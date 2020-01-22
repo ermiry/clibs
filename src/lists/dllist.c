@@ -11,6 +11,35 @@ static inline void list_element_delete (ListElement *le);
 
 #pragma region internal
 
+static ListElement *list_element_new (void) {
+
+    ListElement *le = (ListElement *) malloc (sizeof (ListElement));
+    if (le) {
+        le->next = le->prev = NULL;
+        le->data = NULL;
+    }
+
+    return le;
+
+}
+
+static inline void list_element_delete (ListElement *le) { if (le) free (le); }
+
+static DoubleList *dlist_new (void) {
+
+    DoubleList *dlist = (DoubleList *) malloc (sizeof (DoubleList));
+    if (dlist) {
+        dlist->size = 0;
+        dlist->start = NULL;
+        dlist->end = NULL;
+        dlist->destroy = NULL;
+        dlist->compare = NULL;
+    }
+
+    return dlist;
+
+}
+
 static void *dlist_internal_remove_element (DoubleList *dlist, ListElement *element) {
 
     if (dlist) {
@@ -64,35 +93,6 @@ static void *dlist_internal_remove_element (DoubleList *dlist, ListElement *elem
 }
 
 #pragma endregion
-
-static ListElement *list_element_new (void) {
-
-    ListElement *le = (ListElement *) malloc (sizeof (ListElement));
-    if (le) {
-        le->next = le->prev = NULL;
-        le->data = NULL;
-    }
-
-    return le;
-
-}
-
-static inline void list_element_delete (ListElement *le) { if (le) free (le); }
-
-static DoubleList *dlist_new (void) {
-
-    DoubleList *dlist = (DoubleList *) malloc (sizeof (DoubleList));
-    if (dlist) {
-        dlist->size = 0;
-        dlist->start = NULL;
-        dlist->end = NULL;
-        dlist->destroy = NULL;
-        dlist->compare = NULL;
-    }
-
-    return dlist;
-
-}
 
 void dlist_delete (void *dlist_ptr) {
 
@@ -264,7 +264,7 @@ void *dlist_remove_element (DoubleList *dlist, ListElement *element) {
     if (dlist) {
         pthread_mutex_lock (dlist->mutex);
 
-        void *data = dlist_internal_remove_element (dlist, NULL);
+        void *data = dlist_internal_remove_element (dlist, element);
 
         pthread_mutex_unlock (dlist->mutex);
 
