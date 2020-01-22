@@ -325,8 +325,6 @@ ListElement *dlist_get_element (DoubleList *dlist, void *data) {
                 ptr = ptr->next;
             }
         }
-
-        return NULL;    // not found
     }
 
     return NULL;    

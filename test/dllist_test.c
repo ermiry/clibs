@@ -110,6 +110,47 @@ static void *test_thread_remove (void *args) {
 
 }
 
+static void *test_thread_search (void *args) {
+
+	if (args) {
+		DoubleList *list = (DoubleList *) args;
+
+		// get 10 random values from the list
+		for (unsigned int i = 0; i < 10; i++) {
+			Integer *integer = (Integer *) malloc (sizeof (int));
+			integer->value = rand () % 999 + 1;
+
+			printf ("Searching: %d...\n", integer->value);
+			Integer *search = (Integer *) dlist_search (list, integer);
+			if (search) printf ("%d - %d\n", i + 1, search->value);
+
+			free (integer);
+		}
+	}
+
+}
+
+static void *test_thread_get_element (void *args) {
+
+	if (args) {
+		DoubleList *list = (DoubleList *) args;
+
+		// get 10 random values from the list
+		for (unsigned int i = 0; i < 10; i++) {
+			Integer *integer = (Integer *) malloc (sizeof (int));
+			integer->value = rand () % 999 + 1;
+
+			printf ("Getting element for: %d...\n", integer->value);
+			ListElement *le = dlist_get_element (list, integer);
+			Integer *search = (Integer *) le->data;
+			if (search) printf ("%d - %d\n", i + 1, search->value);
+
+			free (integer);
+		}
+	}
+
+}
+
 static int test_thread_safe (void) {
 
 	// create a global list
@@ -149,8 +190,11 @@ static int test_thread_safe (void) {
 
 	// 22/01/2020 -- 3:14 -- this has no problem
 	pthread_create (&threads[0], NULL, test_thread_add, list);
-	pthread_create (&threads[2], NULL, test_thread_remove, list);
+	pthread_create (&threads[1], NULL, test_thread_remove, list);
+	// pthread_create (&threads[2], NULL, test_thread_search, list);
+	pthread_create (&threads[2], NULL, test_thread_get_element, list);
 	pthread_join (threads[0], NULL);
+	pthread_join (threads[1], NULL);
 	pthread_join (threads[2], NULL);
 
 	printf ("\nItems in list: %ld\n", dlist_size (list));
@@ -171,11 +215,11 @@ int main (void) {
 
 	srand ((unsigned) time (NULL));
 
-	return test_remove ();
+	// return test_remove ();
 
 	// return test_sort ();
 
-	// return test_thread_safe ();
+	return test_thread_safe ();
 
 	return 0;
 
