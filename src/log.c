@@ -55,7 +55,9 @@ void log_msg (FILE *__restrict __stream, LogMsgType firstType, LogMsgType second
 
 		case LOG_ERROR: fprintf (__stream, COLOR_RED "%s" COLOR_RESET, message); break;
 		case LOG_WARNING: fprintf (__stream, COLOR_YELLOW "%s" COLOR_RESET, message); break;
-		case LOG_SUCCESS: fprintf (__stream, COLOR_GREEN "%s" COLOR_RESET, message); b		default: fprintf (__stream, "%s", message); break;
+		case LOG_SUCCESS: fprintf (__stream, COLOR_GREEN "%s" COLOR_RESET, message); break;
+
+		default: fprintf (__stream, "%s", message); break;
 	}
 
 	if (message) free (message);
