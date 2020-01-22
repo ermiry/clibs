@@ -211,9 +211,11 @@ static int test_thread_safe (void) {
 
 	printf ("\nItems in list: %ld\n", dlist_size (list));
 	dlist_sort (list);
+	unsigned int i = 1;
 	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
 		Integer *integer = (Integer *) le->data;
-		printf ("%3i", integer->value);
+		printf ("%3d - %3i\n", i, integer->value);
+		i++;
 	}
 
 	// 21/01/2020 -- 15:09 -- we get a segfault every other time and NOT all items get inserted when that happens
