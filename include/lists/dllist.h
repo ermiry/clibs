@@ -6,23 +6,23 @@
 
 typedef struct ListElement {
 
-    struct ListElement *prev;
-    void *data;
-    struct ListElement *next;
+	struct ListElement *prev;
+	void *data;
+	struct ListElement *next;
 
 } ListElement;
 
 typedef struct DoubleList {
 
-    size_t size;
+	size_t size;
 
-    ListElement *start;
-    ListElement *end;
+	ListElement *start;
+	ListElement *end;
 
-    void (*destroy)(void *data);
-    int (*compare)(const void *one, const void *two);
+	void (*destroy)(void *data);
+	int (*compare)(const void *one, const void *two);
 
-    pthread_mutex_t *mutex;
+	pthread_mutex_t *mutex;
 
 } DoubleList;
 
@@ -47,7 +47,7 @@ extern void dlist_set_destroy (DoubleList *list, void (*destroy)(void *data));
 // destroy is the method used to free up the data, NULL to use the default free
 // compare must return -1 if one < two, must return 0 if they are equal, and must return 1 if one > two
 extern DoubleList *dlist_init (void (*destroy)(void *data),
-    int (*compare)(const void *one, const void *two));
+	int (*compare)(const void *one, const void *two));
 
 // destroys all of the dlist's elements and their data but keeps the dlist
 extern void dlist_reset (DoubleList *);
