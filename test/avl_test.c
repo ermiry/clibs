@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <time.h>
+#include <pthread.h>
 
 #include "../include/collections/avl.h"
 
@@ -130,12 +131,17 @@ static int compare_int (const void *one, const void *two) {
 
 }
 
+static int print_count = 1;
+
 static void avl_int_print (AVLNode *node) {
 
 	if (node) {
 		avl_int_print (node->left);
 		
-		if (node->id) printf ("%d\n", ((Integer *) node->id)->value);
+		if (node->id) {
+			printf ("%4d - %4d\n", print_count, ((Integer *) node->id)->value);
+			print_count++;
+		}
 
 		avl_int_print (node->right);		
 	}
@@ -161,6 +167,89 @@ static int test_insert_rand_values (void) {
 
 }
 
+static void *test_thread_add (void *args) {
+
+	if (args) {
+		AVLTree *tree = (AVLTree *) args;
+
+		// add ten items at the list end
+		for (unsigned int i = 0; i < 10; i++) {
+			Integer *integer = (Integer *) malloc (sizeof (int));
+			// integer->value = rand () % 99 + 1;
+			integer->value = i;
+			avl_insert_node (tree, integer);
+		}
+	}
+
+}
+
+static void *test_thread_remove (void *args) {
+
+	if (args) {
+		AVLTree *tree = (AVLTree *) args;
+
+		// add ten items at the list end
+		for (unsigned int i = 0; i < 10; i++) {
+			Integer *integer = (Integer *) malloc (sizeof (int));
+			// integer->value = rand () % 99 + 1;
+			integer->value = i;
+			
+			Integer *found = (Integer *) avl_remove_node (tree, integer);
+			if (found) free (found);
+
+			free (integer);
+		}
+	}
+
+}
+
+static int test_thread_safe (void) {
+
+	printf ("\n[TEST]: Thread safe test\n");
+
+	AVLTree *tree = avl_init (compare_int, free);
+
+	// create 4 threads
+	const unsigned int N_THREADS = 4;
+	pthread_t threads[N_THREADS];
+
+	for (unsigned int i = 0; i < N_THREADS; i++) {
+		pthread_create (&threads[i], NULL, test_thread_add, tree);
+	}
+
+	// join the threads
+	for (unsigned int i = 0; i < N_THREADS; i++) {
+		pthread_join (threads[i], NULL);
+	}
+
+	// pthread_create (&threads[0], NULL, test_thread_add, tree);
+	// pthread_create (&threads[1], NULL, test_thread_add, tree);
+
+	// for (unsigned int i = 0; i < 2; i++) {
+	// 	pthread_join (threads[i], NULL);
+	// }
+
+	// after 4 threads inserting values, count must be 40
+	print_count = 1;
+	avl_int_print (tree->root);
+
+	pthread_create (&threads[0], NULL, test_thread_add, tree);
+	pthread_create (&threads[1], NULL, test_thread_remove, tree);
+
+	pthread_join (threads[0], NULL);
+	pthread_join (threads[1], NULL);
+
+	// after another insert and one remove threa, count must be still 40
+	printf ("\nFINAL RESULT\n");
+	print_count = 1;
+	avl_int_print (tree->root);
+
+	avl_delete (tree);
+
+	return 0;
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from the test directory
 // mkdir bin
@@ -173,7 +262,9 @@ int main (void) {
 
 	// return simple_user_test ();
 
-	return test_insert_rand_values ();
+	// return test_insert_rand_values ();
+
+	return test_thread_safe ();
 
 	return 0;
 
