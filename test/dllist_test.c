@@ -226,7 +226,7 @@ static int test_thread_safe (void) {
 }
 
 // uncomment the function that represents the test you want to run and the follow these steps
-// from test directory...
+// from main directory...
 // mkdir bin
 // to compile run: gcc ./test/dllist_test.c ./src/collections/dllist.c -l pthread -o ./bin/dllist_test
 // and run using: ./bin/dllist_test
