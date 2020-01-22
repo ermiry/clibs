@@ -131,7 +131,7 @@ static int compare_int (const void *one, const void *two) {
 
 }
 
-static int print_count = 1;
+static int print_count = 0;
 
 static void avl_int_print (AVLNode *node) {
 
@@ -139,11 +139,25 @@ static void avl_int_print (AVLNode *node) {
 		avl_int_print (node->left);
 		
 		if (node->id) {
-			printf ("%4d - %4d\n", print_count, ((Integer *) node->id)->value);
 			print_count++;
+			printf ("%4d - %4d\n", print_count, ((Integer *) node->id)->value);
 		}
 
 		avl_int_print (node->right);		
+	}
+
+}
+
+static void avl_int_print_count (AVLNode *node) {
+
+	if (node) {
+		avl_int_print_count (node->left);
+		
+		if (node->id) {
+			print_count++;
+		}
+
+		avl_int_print_count (node->right);		
 	}
 
 }
@@ -167,13 +181,18 @@ static int test_insert_rand_values (void) {
 
 }
 
+static unsigned int test_thread_add_count = 1;
+
 static void *test_thread_add (void *args) {
 
 	if (args) {
+		printf ("\n%d - test_thread_add ()\n", test_thread_add_count);
+		test_thread_add_count++;
+
 		AVLTree *tree = (AVLTree *) args;
 
 		// add ten items at the list end
-		for (unsigned int i = 0; i < 10; i++) {
+		for (unsigned int i = 0; i < 1000; i++) {
 			Integer *integer = (Integer *) malloc (sizeof (int));
 			// integer->value = rand () % 99 + 1;
 			integer->value = i;
@@ -183,13 +202,18 @@ static void *test_thread_add (void *args) {
 
 }
 
+static unsigned int test_thread_remove_count = 1;
+
 static void *test_thread_remove (void *args) {
 
 	if (args) {
+		printf ("\n%d - test_thread_remove ()\n", test_thread_remove_count);
+		test_thread_remove_count++;
+
 		AVLTree *tree = (AVLTree *) args;
 
 		// add ten items at the list end
-		for (unsigned int i = 0; i < 10; i++) {
+		for (unsigned int i = 0; i < 1000; i++) {
 			Integer *integer = (Integer *) malloc (sizeof (int));
 			// integer->value = rand () % 99 + 1;
 			integer->value = i;
@@ -229,9 +253,9 @@ static int test_thread_safe (void) {
 	// 	pthread_join (threads[i], NULL);
 	// }
 
-	// after 4 threads inserting values, count must be 40
+	// after 4 threads inserting values, count must be 4000
 	print_count = 1;
-	avl_int_print (tree->root);
+	// avl_int_print (tree->root);
 
 	pthread_create (&threads[0], NULL, test_thread_add, tree);
 	pthread_create (&threads[1], NULL, test_thread_remove, tree);
@@ -239,10 +263,12 @@ static int test_thread_safe (void) {
 	pthread_join (threads[0], NULL);
 	pthread_join (threads[1], NULL);
 
-	// after another insert and one remove threa, count must be still 40
+	// after another insert and one remove threa, count must be still 4000
 	printf ("\nFINAL RESULT\n");
-	print_count = 1;
-	avl_int_print (tree->root);
+	print_count = 0;
+	// avl_int_print (tree->root);
+	avl_int_print_count (tree->root);
+	printf ("\nFINAL COUNT: %d\n", print_count);
 
 	avl_delete (tree);
 

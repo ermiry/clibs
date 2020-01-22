@@ -32,6 +32,8 @@ static DoubleList *dlist_new (void) {
 		dlist->end = NULL;
 		dlist->destroy = NULL;
 		dlist->compare = NULL;
+
+		dlist->mutex = NULL;
 	}
 
 	return dlist;

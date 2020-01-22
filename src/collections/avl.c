@@ -1,19 +1,21 @@
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
+
+#include <pthread.h>
 
 #include "../../include/collections/avl.h"
 
-void avl_clear_tree (AVLNode **node, void (*destroy)(void *data));
+unsigned int avl_clear_tree (AVLTree *tree, void (*destroy)(void *data));
 
-AVLTree *avl_new (void) {
+static AVLTree *avl_new (void) {
 
 	AVLTree *tree = (AVLTree *) malloc (sizeof (AVLTree));
 	if (tree) {
-		memset (tree, 0, sizeof (AVLTree));
 		tree->root = NULL;
 		tree->comparator = NULL;
 		tree->destroy = NULL;
+
+		tree->mutex = NULL;
 	}
 
 	return tree;
@@ -23,7 +25,11 @@ AVLTree *avl_new (void) {
 void avl_delete (AVLTree *tree) {
 
 	if (tree) {
-		avl_clear_tree (&tree->root, tree->destroy);
+		avl_clear_tree (tree, tree->destroy);
+
+		pthread_mutex_destroy (tree->mutex);
+		free (tree->mutex);
+
 		free (tree);
 	}
 
@@ -37,22 +43,23 @@ AVLTree *avl_init (Comparator comparator, void (*destroy)(void *data)) {
 
 	AVLTree *tree = avl_new ();
 	if (tree) {
-		tree->root = NULL;
 		tree->comparator = comparator;
 		if (destroy) tree->destroy = destroy;
+
+		tree->mutex = (pthread_mutex_t *) malloc (sizeof (pthread_mutex_t));
+		pthread_mutex_init (tree->mutex, NULL);
 	}
 
 	return tree;
 
 }
 
-// removes all nodes from an avl tree
-void avl_clear_tree (AVLNode **node, void (*destroy)(void *data)) {
+static void avl_internal_clear_tree (AVLNode **node, void (*destroy)(void *data)) {
 
 	if (*node) {
 		AVLNode *ptr = *node;
-		avl_clear_tree (&(ptr->right), destroy);
-		avl_clear_tree (&(ptr->left), destroy);
+		avl_internal_clear_tree (&(ptr->right), destroy);
+		avl_internal_clear_tree (&(ptr->left), destroy);
 
 		if (destroy) destroy (ptr->id);
 		// else free (ptr->id);
@@ -63,19 +70,39 @@ void avl_clear_tree (AVLNode **node, void (*destroy)(void *data)) {
 
 }
 
+// removes all nodes from an avl tree, the node nada is only destroyed if a destroy method is set
+// returns 0 on success, 1 on error
+unsigned int avl_clear_tree (AVLTree *tree, void (*destroy)(void *data)) {
+
+	if (tree) {
+		pthread_mutex_lock (tree->mutex);
+
+		avl_internal_clear_tree (&tree->root, tree->destroy);
+
+		pthread_mutex_unlock (tree->mutex);
+
+		return 0;	// success
+	}
+
+	return 1; 		// error
+
+}
+
 bool avl_is_empty (AVLTree *tree) { return (tree->root ? true : false ); }
 
 // returns content of required node
 void *avl_get_node_data (AVLTree *tree, void *id) {
 
-	AVLNode *node = tree->root;
+	if (tree && id) {
+		AVLNode *node = tree->root;
 
-	while (node != NULL) {
-		switch (tree->comparator (node->id, id)) {
-			case 0: return node->id; 
-			case 1: node = node->left; break;
-			case -1: node = node->right; break;
-			default: return NULL;
+		while (node != NULL) {
+			switch (tree->comparator (node->id, id)) {
+				case 0: return node->id; 
+				case 1: node = node->left; break;
+				case -1: node = node->right; break;
+				default: return NULL;
+			}
 		}
 	}
 
@@ -88,9 +115,15 @@ static void avl_insert_node_r (AVLNode **parent, Comparator comparator, void *id
 // user function for insertion
 void avl_insert_node (AVLTree *tree, void *data) {
 
-	char flag = 0;
+	if (tree && data) {
+		char flag = 0;
 
-	avl_insert_node_r (&(tree->root), tree->comparator, data, &flag);
+		pthread_mutex_lock (tree->mutex);
+
+		avl_insert_node_r (&(tree->root), tree->comparator, data, &flag);
+
+		pthread_mutex_unlock (tree->mutex);
+	}
 
 }
 
@@ -99,9 +132,19 @@ static void *avl_remove_node_r (AVLTree *tree, AVLNode **parent, Comparator comp
 // user function to remove a node
 void *avl_remove_node (AVLTree *tree, void *data) {
 
-	char flag = 0;
+	void *retval = NULL;
 
-	return avl_remove_node_r (tree, &tree->root, tree->comparator, data, &flag);
+	if (tree && data) {
+		char flag = 0;
+
+		pthread_mutex_lock (tree->mutex);
+
+		retval = avl_remove_node_r (tree, &tree->root, tree->comparator, data, &flag);
+
+		pthread_mutex_unlock (tree->mutex);
+	}
+
+	return retval;
 
 }
 
@@ -122,9 +165,8 @@ bool avl_node_in_tree (AVLTree *tree, void *id) {
 
 }
 
-#pragma regigion PRIVATE
+#pragma regigion internal
 
-// TODO: what happens to the data ptr?
 static AVLNode *avl_node_new (void *data) {
 
 	AVLNode *node = (AVLNode *) malloc (sizeof (AVLNode));
