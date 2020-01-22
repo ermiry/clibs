@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "biTree.h"
+#include "../../include/collections/biTree.h"
 
 BiTree *bitree_create (void (*destroy)(void *data)) {
 

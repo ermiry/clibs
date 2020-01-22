@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "trees/avl.h"
+#include "../../include/collections/avl.h"
 
 void avl_clear_tree (AVLNode **node, void (*destroy)(void *data));
 

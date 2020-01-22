@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 
-#include "../../include/lists/dllist.h"
+#include "../../include/collections/dllist.h"
 
 static inline void list_element_delete (ListElement *le);
 
