@@ -226,11 +226,10 @@ bool dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
 }
 
 // finds the data using the query and the list comparator and the removes it from the list
-// and deletes it using the list destroy method
-// returns 0 on success, 1 on error or not found
-int dlist_remove (DoubleList *dlist, void *query) {
+// and returns the list element's data
+void *dlist_remove (DoubleList *dlist, void *query) {
 
-	int retval = 1;
+	void *retval = NULL;
 
 	if (dlist && query) {
 		pthread_mutex_lock (dlist->mutex);
@@ -246,10 +245,10 @@ int dlist_remove (DoubleList *dlist, void *query) {
 					if (first) data = dlist_internal_remove_element (dlist, NULL);
 					else data = dlist_internal_remove_element (dlist, ptr);
 					if (data) {
-						if (dlist->destroy) dlist->destroy (data);
-						else free (data);
+						// if (dlist->destroy) dlist->destroy (data);
+						// else free (data);
 
-						retval = 0;
+						retval = data;
 					}
 
 					break;

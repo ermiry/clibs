@@ -63,9 +63,8 @@ extern void dlist_clean (DoubleList *);
 extern bool dlist_insert_after (DoubleList *dlist, ListElement *element, void *data);
 
 // finds the data using the query and the list comparator and the removes it from the list
-// and deletes it using the list destroy method
-// returns 0 on success, 1 on error or not found
-extern int dlist_remove (DoubleList *dlist, void *query);
+// and returns the list element's data
+extern void *dlist_remove (DoubleList *dlist, void *query);
 
 // removes the dlist element from the dlist and returns the data
 // NULL for the start of the list

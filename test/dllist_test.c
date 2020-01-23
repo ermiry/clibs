@@ -42,7 +42,8 @@ static int test_remove (void) {
 	Integer *query = (Integer *) malloc (sizeof (int));
 	if (query) {
 		query->value = 5;
-		dlist_remove (list, query);
+		Integer *found = dlist_remove (list, query);
+		if (found) free (found);
 		free (query);
 	}
 
@@ -104,7 +105,8 @@ static void *test_thread_remove (void *args) {
 
 		// remove 5 items from the start of the list
 		for (unsigned int i = 0; i < 50; i++) {
-			dlist_remove_element (list, dlist_start (list));
+			void *integer = dlist_remove_element (list, dlist_start (list));
+			if (integer) free (integer);
 		}
 	}
 
