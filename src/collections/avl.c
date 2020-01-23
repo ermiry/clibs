@@ -91,17 +91,21 @@ unsigned int avl_clear_tree (AVLTree *tree, void (*destroy)(void *data)) {
 bool avl_is_empty (AVLTree *tree) { return (tree->root ? true : false ); }
 
 // returns content of required node
-void *avl_get_node_data (AVLTree *tree, void *id) {
+// option to pass a different comparator than the one that was originally set
+void *avl_get_node_data (AVLTree *tree, void *id, Comparator comparator) {
 
 	if (tree && id) {
-		AVLNode *node = tree->root;
+		Comparator comp = comparator ? comparator : tree->comparator;
 
-		while (node != NULL) {
-			switch (tree->comparator (node->id, id)) {
-				case 0: return node->id; 
-				case 1: node = node->left; break;
-				case -1: node = node->right; break;
-				default: return NULL;
+		if (comp) {
+			AVLNode *node = tree->root;
+			while (node != NULL) {
+				switch (comp (node->id, id)) {
+					case 0: return node->id; 
+					case 1: node = node->left; break;
+					case -1: node = node->right; break;
+					default: return NULL;
+				}
 			}
 		}
 	}

@@ -95,7 +95,7 @@ static int simple_user_test (void) {
 	// we can use the comparator method and create a new user that we will use a query
 	// and get data from the tree
 	User *query = user_new ("erick", 1);
-	void *found_ptr = avl_get_node_data (tree, query);
+	void *found_ptr = avl_get_node_data (tree, query, NULL);
 	if (found_ptr) {
 		User *found = (User *) found_ptr;
 		printf ("\nFound name: %s\n", found->name);
