@@ -42,7 +42,7 @@ static int test_remove (void) {
 	Integer *query = (Integer *) malloc (sizeof (int));
 	if (query) {
 		query->value = 5;
-		Integer *found = dlist_remove (list, query);
+		Integer *found = dlist_remove (list, query, NULL);
 		if (found) free (found);
 		free (query);
 	}
@@ -70,7 +70,7 @@ static int test_sort (void) {
 		dlist_insert_after (list, dlist_start (list), integer);
 	}
 
-	dlist_sort (list);
+	dlist_sort (list, NULL);
 	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
 		Integer *integer = (Integer *) le->data;
 		printf ("%3i", integer->value);
@@ -123,7 +123,7 @@ static void *test_thread_search (void *args) {
 			integer->value = rand () % 99 + 1;
 
 			printf ("Searching: %d...\n", integer->value);
-			Integer *search = (Integer *) dlist_search (list, integer);
+			Integer *search = (Integer *) dlist_search (list, integer, NULL);
 			if (search) printf ("%d - %d\n", i + 1, search->value);
 
 			free (integer);
@@ -143,7 +143,7 @@ static void *test_thread_get_element (void *args) {
 			integer->value = rand () % 999 + 1;
 
 			printf ("Getting element for: %d...\n", integer->value);
-			ListElement *le = dlist_get_element (list, integer);
+			ListElement *le = dlist_get_element (list, integer, NULL);
 			Integer *search = (Integer *) le->data;
 			if (search) printf ("%d - %d\n", i + 1, search->value);
 
@@ -158,7 +158,7 @@ static void *test_thread_sort (void *args) {
 	if (args) {
 		DoubleList *list = (DoubleList *) args;
 
-		dlist_sort (list);
+		dlist_sort (list, NULL);
 	}
 
 }
@@ -212,7 +212,7 @@ static int test_thread_safe (void) {
 	// pthread_join (threads[3], NULL);
 
 	printf ("\nItems in list: %ld\n", dlist_size (list));
-	dlist_sort (list);
+	dlist_sort (list, NULL);
 	unsigned int i = 1;
 	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
 		Integer *integer = (Integer *) le->data;

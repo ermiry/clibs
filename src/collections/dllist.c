@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stdio.h>
+#include <stdbool.h>
 
 #include <pthread.h>
 
@@ -184,10 +184,10 @@ void dlist_clean (DoubleList *dlist) {
 /*** Elements ***/
 
 // inserts the data in the double list after the specified element
-// returns true on success, false on error or not found
-bool dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
+// returns 0 on success, 1 on error or not found
+int dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
 
-	bool retval = false;
+	int retval = 1;
 
 	if (dlist && data) {
 		pthread_mutex_lock (dlist->mutex);
@@ -215,7 +215,7 @@ bool dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
 
 			dlist->size++;
 
-			retval = true;
+			retval = 0;
 		}
 
 		pthread_mutex_unlock (dlist->mutex);
@@ -227,19 +227,22 @@ bool dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
 
 // finds the data using the query and the list comparator and the removes it from the list
 // and returns the list element's data
-void *dlist_remove (DoubleList *dlist, void *query) {
+// option to pass a custom compare method for searching, if NULL, dlist's compare method will be used
+void *dlist_remove (DoubleList *dlist, void *query, int (*compare)(const void *one, const void *two)) {
 
 	void *retval = NULL;
 
 	if (dlist && query) {
-		pthread_mutex_lock (dlist->mutex);
+		int (*comp)(const void *one, const void *two) = compare ? compare : dlist->compare;
 
-		ListElement *ptr = dlist_start (dlist);
+		if (comp) {
+			pthread_mutex_lock (dlist->mutex);
 
-		if (dlist->compare) {
+			ListElement *ptr = dlist_start (dlist);
+
 			bool first = true;
 			while (ptr != NULL) {
-				if (!dlist->compare (ptr->data, query)) {
+				if (!comp (ptr->data, query)) {
 					// remove the list element
 					void *data = NULL;
 					if (first) data = dlist_internal_remove_element (dlist, NULL);
@@ -257,9 +260,9 @@ void *dlist_remove (DoubleList *dlist, void *query) {
 				ptr = ptr->next;
 				first = false;
 			}
-		}
 
-		pthread_mutex_unlock (dlist->mutex);
+			pthread_mutex_unlock (dlist->mutex);
+		}
 	}
 
 	return retval;
@@ -287,22 +290,18 @@ void *dlist_remove_element (DoubleList *dlist, ListElement *element) {
 /*** Traversing --- Searching ***/
 
 // uses the list comparator to search using the data as the query
+// option to pass a custom compare method for searching, if NULL, dlist's compare method will be used
 // returns the double list's element data
-void *dlist_search (DoubleList *dlist, void *data) {
+void *dlist_search (DoubleList *dlist, void *data, int (*compare)(const void *one, const void *two)) {
 
 	if (dlist && data) {
-		ListElement *ptr = dlist_start (dlist);
+		int (*comp)(const void *one, const void *two) = compare ? compare : dlist->compare;
 
-		if (dlist->compare) {
-			while (ptr != NULL) {
-				if (!dlist->compare (ptr->data, data)) return ptr->data;
-				ptr = ptr->next;
-			}
-		}
+		if (comp) {
+			ListElement *ptr = dlist_start (dlist);
 
-		else {
 			while (ptr != NULL) {
-				if (ptr->data == data) return ptr->data;
+				if (!comp (ptr->data, data)) return ptr->data;
 				ptr = ptr->next;
 			}
 		}
@@ -313,28 +312,24 @@ void *dlist_search (DoubleList *dlist, void *data) {
 }
 
 // searches the dlist and returns the dlist element associated with the data
-// can use a compartor set in the dlist
-ListElement *dlist_get_element (DoubleList *dlist, void *data) {
+// option to pass a custom compare method for searching, if NULL, dlist's compare method will be used
+ListElement *dlist_get_element (DoubleList *dlist, void *data, 
+	int (*compare)(const void *one, const void *two)) {
 
 	if (dlist && data) {
-		ListElement *ptr = dlist_start (dlist);
+		int (*comp)(const void *one, const void *two) = compare ? compare : dlist->compare;
 
-		if (dlist->compare) {
+		if (comp) {
+			ListElement *ptr = dlist_start (dlist);
+
 			while (ptr != NULL) {
 				if (!dlist->compare (ptr->data, data)) return ptr;
 				ptr = ptr->next;
 			}
 		}
-
-		else {  
-			while (ptr != NULL) {
-				if (ptr->data == data) return ptr;
-				ptr = ptr->next;
-			}
-		}
 	}
 
-	return NULL;    
+	return NULL;
 
 }
 
@@ -402,18 +397,23 @@ static ListElement *dlist_merge_sort (ListElement *head,
 }
 
 // uses merge sort to sort the list using the comparator
+// option to pass a custom compare method for searching, if NULL, dlist's compare method will be used
 // return 0 on succes 1 on error
-int dlist_sort (DoubleList *dlist) {
+int dlist_sort (DoubleList *dlist, int (*compare)(const void *one, const void *two)) {
 
 	int retval = 1;
 
 	if (dlist && dlist->compare) {
-		pthread_mutex_lock (dlist->mutex);
+		int (*comp)(const void *one, const void *two) = compare ? compare : dlist->compare;
 
-		dlist->start = dlist_merge_sort (dlist->start, dlist->compare);
-		retval = 0;
+		if (comp) {
+			pthread_mutex_lock (dlist->mutex);
 
-		pthread_mutex_unlock (dlist->mutex);
+			dlist->start = dlist_merge_sort (dlist->start, comp);
+			retval = 0;
+
+			pthread_mutex_unlock (dlist->mutex);
+		}
 	}
 
 	return retval;
