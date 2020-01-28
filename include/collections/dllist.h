@@ -33,6 +33,7 @@ typedef struct DoubleList {
 #define dlist_element_data(element) ((element)->data)
 #define dlist_element_next(element) ((element)->next)
 
+// correctly deletes a dlist and all of its elements using the destroy method
 extern void dlist_delete (void *dlist_ptr);
 
 // sets a list compare function
