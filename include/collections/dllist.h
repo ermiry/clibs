@@ -33,7 +33,6 @@ typedef struct DoubleList {
 #define dlist_element_data(element) ((element)->data)
 #define dlist_element_next(element) ((element)->next)
 
-// correctly deletes a dlist and all of its elements using the destroy method
 extern void dlist_delete (void *dlist_ptr);
 
 // sets a list compare function
@@ -58,9 +57,20 @@ extern void dlist_clean (DoubleList *);
 
 /*** Elements ***/
 
-// inserts the data in the double list after the specified element
-// returns 0 on success, 1 on error or not found
+// inserts the data in the double list BEFORE the specified element
+// if element == NULL, data will be inserted at the start of the list
+// returns 0 on success, 1 on error
+extern int dlist_insert_before (DoubleList *dlist, ListElement *element, void *data);
+
+// inserts the data in the double list AFTER the specified element
+// if element == NULL, data will be inserted at the start of the list
+// returns 0 on success, 1 on error
 extern int dlist_insert_after (DoubleList *dlist, ListElement *element, void *data);
+
+// inserts the data in the double list in the specified pos (0 indexed)
+// if the pos is greater than the current size, it will be added at the end
+// returns 0 on success, 1 on error
+extern int dlist_insert_at (DoubleList *dlist, void *data, unsigned int pos);
 
 // finds the data using the query and the list comparator and the removes it from the list
 // and returns the list element's data

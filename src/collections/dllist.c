@@ -183,8 +183,50 @@ void dlist_clean (DoubleList *dlist) {
 
 /*** Elements ***/
 
-// inserts the data in the double list after the specified element
-// returns 0 on success, 1 on error or not found
+// inserts the data in the double list BEFORE the specified element
+// if element == NULL, data will be inserted at the start of the list
+// returns 0 on success, 1 on error
+int dlist_insert_before (DoubleList *dlist, ListElement *element, void *data) {
+
+	int retval = 1;
+
+	if (dlist && data) {
+		pthread_mutex_lock (dlist->mutex);
+
+		ListElement *le = list_element_new ();
+		if (le) {
+			le->data = (void *) data;
+
+			if (element == NULL) {
+				if (dlist_size (dlist) == 0) dlist->end = le;
+				else dlist->start->prev = le;
+			
+				le->next = dlist->start;
+				le->prev = NULL;
+				dlist->start = le;
+			}
+
+			else {
+				le->next = element;
+				le->prev = element->prev;
+				element->prev = le;
+			}
+
+			dlist->size++;
+
+			retval = 0;
+		}
+
+		pthread_mutex_unlock (dlist->mutex);
+	}
+
+	return retval;
+
+}
+
+// inserts the data in the double list AFTER the specified element
+// if element == NULL, data will be inserted at the start of the list
+// returns 0 on success, 1 on error
 int dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
 
 	int retval = 1;
@@ -219,6 +261,39 @@ int dlist_insert_after (DoubleList *dlist, ListElement *element, void *data) {
 		}
 
 		pthread_mutex_unlock (dlist->mutex);
+	}
+
+	return retval;
+
+}
+
+// inserts the data in the double list in the specified pos (0 indexed)
+// if the pos is greater than the current size, it will be added at the end
+// returns 0 on success, 1 on error
+int dlist_insert_at (DoubleList *dlist, void *data, unsigned int pos) {
+
+	int retval = 1;
+
+	if (dlist && data) {
+		// insert at the start of the list
+		if (pos == 0) retval = dlist_insert_before (dlist, NULL, data);
+		else if (pos > dlist_size (dlist)) {
+			// insert at the end of the list
+			retval = dlist_insert_after (dlist, dlist_end (dlist), data);
+		}
+
+		else {
+			unsigned int count = 0;
+			ListElement *le = dlist_start (dlist);
+			while (le) {
+				if (count == pos) break;
+				
+				count++;
+				le = le->next;
+			}
+
+			retval = dlist_insert_before (dlist, le, data);
+		}
 	}
 
 	return retval;
