@@ -207,6 +207,7 @@ int dlist_insert_before (DoubleList *dlist, ListElement *element, void *data) {
 			}
 
 			else {
+				element->prev->next = le;
 				le->next = element;
 				le->prev = element->prev;
 				element->prev = le;
