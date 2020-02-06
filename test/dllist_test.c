@@ -9,7 +9,15 @@
 
 typedef struct { int value; } Integer;
 
-int compare_int (const void *one, const void *two) {
+static Integer *integer_new (int value) {
+
+	Integer *integer = (Integer *) malloc (sizeof (Integer));
+	if (integer) integer->value = value;
+	return integer;
+
+}
+
+static int compare_int (const void *one, const void *two) {
 
 	if (one && two) {
 		Integer *int_a = (Integer *) one;
@@ -19,6 +27,29 @@ int compare_int (const void *one, const void *two) {
 		else if (int_a->value == int_b->value) return 0;
 		else return 1;
 	}
+
+}
+
+// 06/02/2020 -- 10:37
+static int test_insert (void) {
+
+	DoubleList *dlist = dlist_init (free, compare_int);
+
+	// test insert at
+	for (unsigned int i = 0; i < 10; i++) {
+		Integer *integer = integer_new (i);
+		dlist_insert_after (dlist, dlist_end (dlist), integer);
+	}
+
+	dlist_insert_at (dlist, integer_new (100), 0);
+
+	for (ListElement *le = dlist_start (dlist); le; le = le->next) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	dlist_delete (dlist);
+
+	return 0;
 
 }
 
@@ -237,11 +268,13 @@ int main (void) {
 
 	srand ((unsigned) time (NULL));
 
+	return test_insert ();
+
 	// return test_remove ();
 
 	// return test_sort ();
 
-	return test_thread_safe ();
+	// return test_thread_safe ();
 
 	return 0;
 
