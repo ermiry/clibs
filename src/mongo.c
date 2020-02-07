@@ -4,9 +4,15 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
+#include "../include/mongo.h"
+
 #include "../include/types/string.h"
 #include "../include/utils/utils.h"
 #include "../include/utils/log.h"
+
+static MongoStatus status = MONGO_STATUS_DISCONNECTED;
+
+MongoStatus mongo_get_status (void) { return status; }
 
 static mongoc_uri_t *uri;
 static mongoc_client_t *client;
@@ -88,6 +94,8 @@ int mongo_connect (void) {
 	// register the app name -> for logging info
 	mongoc_client_set_appname (client, app_name->str);
 
+	status = MONGO_STATUS_CONNECTED;
+
 	return 0;       // success
 
 }
@@ -104,6 +112,8 @@ void mongo_disconnect (void) {
 	str_delete (db_name);
 
 	mongoc_cleanup ();
+
+	status = MONGO_STATUS_DISCONNECTED;
 
 }
 

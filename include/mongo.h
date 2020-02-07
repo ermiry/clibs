@@ -4,6 +4,15 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
+typedef enum MongoStatus {
+
+	MONGO_STATUS_DISCONNECTED		= 0,
+	MONGO_STATUS_CONNECTED			= 1
+
+} MongoStatus;
+
+extern MongoStatus mongo_get_status (void);
+
 extern void mongo_set_app_name (const char *name);
 
 extern void mongo_set_uri (const char *uri);
