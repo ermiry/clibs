@@ -181,7 +181,7 @@ void dlist_clean (DoubleList *dlist) {
 
 }
 
-/*** Elements ***/
+/*** insert ***/
 
 // inserts the data in the double list BEFORE the specified element
 // if element == NULL, data will be inserted at the start of the list
@@ -301,6 +301,8 @@ int dlist_insert_at (DoubleList *dlist, void *data, unsigned int pos) {
 
 }
 
+/*** remove ***/
+
 // finds the data using the query and the list comparator and the removes it from the list
 // and returns the list element's data
 // option to pass a custom compare method for searching, if NULL, dlist's compare method will be used
@@ -363,6 +365,45 @@ void *dlist_remove_element (DoubleList *dlist, ListElement *element) {
 
 }
 
+// removes the dlist element from the dlist at the specified index 
+// returns the data or NULL if index was invalid
+void *dlist_remove_at (DoubleList *dlist, unsigned int idx) {
+
+	void *retval = NULL;
+
+	if (dlist) {
+		if (idx < dlist->size) {
+			pthread_mutex_lock (dlist->mutex);
+
+			bool first = true;
+			unsigned int i = 0;
+			ListElement *ptr = dlist_start (dlist);
+			while (ptr != NULL) {
+				if (i == idx) {
+					// remove the list element
+					void *data = NULL;
+					if (first) data = dlist_internal_remove_element (dlist, NULL);
+					else data = dlist_internal_remove_element (dlist, ptr);
+					if (data) {
+						retval = data;
+					}
+
+					break;
+				}
+
+				first = false;
+				ptr = ptr->next;
+				i++;
+			}
+
+			pthread_mutex_unlock (dlist->mutex);
+		}
+	}
+
+	return retval;
+
+}
+
 /*** Traversing --- Searching ***/
 
 // uses the list comparator to search using the data as the query
@@ -412,7 +453,7 @@ ListElement *dlist_get_element (DoubleList *dlist, void *data,
 ListElement *dlist_get_element_at (DoubleList *dlist, unsigned int idx) {
 
 	if (dlist) {
-		if (dlist->size < idx) {
+		if (idx < dlist->size) {
 			unsigned int i = 0;
 			ListElement *ptr = dlist_start (dlist);
 			while (ptr != NULL) {
@@ -432,7 +473,7 @@ ListElement *dlist_get_element_at (DoubleList *dlist, unsigned int idx) {
 void *dlist_get_at (DoubleList *dlist, unsigned int idx) {
 
 	if (dlist) {
-		if (dlist->size < idx) {
+		if (idx < dlist->size) {
 			ListElement *le = dlist_get_element_at (dlist, idx);
 			return le ? le->data : NULL;
 		}

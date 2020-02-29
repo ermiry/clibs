@@ -55,7 +55,7 @@ extern void dlist_reset (DoubleList *);
 // this is usefull if another dlist or structure points to the same data
 extern void dlist_clean (DoubleList *);
 
-/*** Elements ***/
+/*** insert ***/
 
 // inserts the data in the double list BEFORE the specified element
 // if element == NULL, data will be inserted at the start of the list
@@ -72,6 +72,8 @@ extern int dlist_insert_after (DoubleList *dlist, ListElement *element, void *da
 // returns 0 on success, 1 on error
 extern int dlist_insert_at (DoubleList *dlist, void *data, unsigned int pos);
 
+/*** remove ***/
+
 // finds the data using the query and the list comparator and the removes it from the list
 // and returns the list element's data
 // option to pass a custom compare method for searching, if NULL, dlist's compare method will be used
@@ -80,6 +82,10 @@ extern void *dlist_remove (DoubleList *dlist, void *query, int (*compare)(const 
 // removes the dlist element from the dlist and returns the data
 // NULL for the start of the list
 extern void *dlist_remove_element (DoubleList *dlist, ListElement *element);
+
+// removes the dlist element from the dlist at the specified index 
+// returns the data or NULL if index was invalid
+extern void *dlist_remove_at (DoubleList *dlist, unsigned int idx);
 
 /*** Traversing --- Searching ***/
 

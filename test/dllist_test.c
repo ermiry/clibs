@@ -258,7 +258,7 @@ static int test_thread_safe (void) {
 
 }
 
-static int test_get (void) {
+static int test_get_at (void) {
 
 	// create a global list
 	DoubleList *list = dlist_init (NULL, compare_int);
@@ -290,6 +290,53 @@ static int test_get (void) {
 
 }
 
+static int test_remove_at (void) {
+
+	// create a global list
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 10; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	// print list
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	// get 10 random values from the list
+	// for (unsigned int i = 0; i < 5; i++) {
+		// unsigned int idx = rand () % 9 + 1;
+		unsigned idx = 7;
+
+		// printf ("Removing element at idx: %d...\n", idx);
+		// ListElement *le = dlist_get_element_at (list, idx);
+		// if (le) {
+		// 	Integer *integer = (Integer *) le->data;
+		// 	printf ("%3d\n", integer->value);
+		// }
+
+		Integer *integer = (Integer *) dlist_remove_at (list, idx);
+		// if (integer) printf ("%3d\n", integer->value);
+	// }
+
+	printf ("\n\n");
+
+	// print list
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	dlist_delete (list);
+
+	return 0;
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from test directory...
 // mkdir bin
@@ -308,7 +355,7 @@ int main (void) {
 
 	// return test_thread_safe ();
 
-	return test_get ();
+	return test_remove_at ();
 
 	return 0;
 
