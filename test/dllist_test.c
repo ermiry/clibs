@@ -258,6 +258,38 @@ static int test_thread_safe (void) {
 
 }
 
+static int test_get (void) {
+
+	// create a global list
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 100; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	// get 10 random values from the list
+	for (unsigned int i = 0; i < 10; i++) {
+		unsigned int idx = rand () % 999 + 1;
+
+		printf ("Getting element at idx: %d... ", idx);
+		// ListElement *le = dlist_get_element_at (list, idx);
+		// if (le) {
+		// 	Integer *integer = (Integer *) le->data;
+		// 	printf ("%3d\n", integer->value);
+		// }
+
+		Integer *integer = (Integer *) dlist_get_at (list, idx);
+		if (integer) printf ("%3d\n", integer->value);
+	}
+
+	dlist_delete (list);
+
+	return 0;
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from test directory...
 // mkdir bin
@@ -268,13 +300,15 @@ int main (void) {
 
 	srand ((unsigned) time (NULL));
 
-	return test_insert ();
+	// return test_insert ();
 
 	// return test_remove ();
 
 	// return test_sort ();
 
 	// return test_thread_safe ();
+
+	return test_get ();
 
 	return 0;
 

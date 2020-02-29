@@ -397,11 +397,44 @@ ListElement *dlist_get_element (DoubleList *dlist, void *data,
 
 		if (comp) {
 			ListElement *ptr = dlist_start (dlist);
-
 			while (ptr != NULL) {
 				if (!dlist->compare (ptr->data, data)) return ptr;
 				ptr = ptr->next;
 			}
+		}
+	}
+
+	return NULL;
+
+}
+
+// traverses the dlist and returns the list element at the specified index
+ListElement *dlist_get_element_at (DoubleList *dlist, unsigned int idx) {
+
+	if (dlist) {
+		if (dlist->size < idx) {
+			unsigned int i = 0;
+			ListElement *ptr = dlist_start (dlist);
+			while (ptr != NULL) {
+				if (i == idx) return ptr;
+
+				ptr = ptr->next;
+				i++;
+			}
+		}
+	}
+
+	return NULL;
+
+}
+
+// traverses the dlist and returns the data of the list element at the specified index
+void *dlist_get_at (DoubleList *dlist, unsigned int idx) {
+
+	if (dlist) {
+		if (dlist->size < idx) {
+			ListElement *le = dlist_get_element_at (dlist, idx);
+			return le ? le->data : NULL;
 		}
 	}
 

@@ -93,6 +93,12 @@ extern void *dlist_search (DoubleList *dlist, void *data, int (*compare)(const v
 extern ListElement *dlist_get_element (DoubleList *dlist, void *data, 
 	int (*compare)(const void *one, const void *two));
 
+// traverses the dlist and returns the list element at the specified index
+extern ListElement *dlist_get_element_at (DoubleList *dlist, unsigned int idx);
+
+// traverses the dlist and returns the data of the list element at the specified index
+extern void *dlist_get_at (DoubleList *dlist, unsigned int idx);
+
 /*** Sorting ***/
 
 // uses merge sort to sort the list using the comparator
