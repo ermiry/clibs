@@ -54,7 +54,12 @@ extern int mongo_update_one (mongoc_collection_t *collection, bson_t *query,
 	bson_t *update);
 
 // deletes one matching document by a query
+// destroys the query
 extern int mongo_delete_one (mongoc_collection_t *collection, bson_t *query);
+
+// deletes all the query matching documents
+// destroys the query
+extern int mongo_delete_many (mongoc_collection_t *collection, bson_t *query);
 
 #pragma endregion
 

@@ -258,4 +258,25 @@ int mongo_delete_one (mongoc_collection_t *collection, bson_t *query) {
 
 }
 
+// deletes all the query matching documents
+// destroys the query
+int mongo_delete_many (mongoc_collection_t *collection, bson_t *query) {
+
+	int retval = 0;
+
+	if (collection && query) {
+		bson_error_t error;
+
+		if (!mongoc_collection_delete_many (collection, query, NULL, NULL, &error)) {
+			cerver_log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Delete failed: %s", error.message));
+			retval = 1;
+		}
+
+		bson_destroy (query);
+	}
+
+	return retval;
+
+}
+
 #pragma endregion
