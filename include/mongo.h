@@ -44,6 +44,11 @@ extern int mongo_insert_document (mongoc_collection_t *collection, bson_t *doc);
 extern const bson_t *mongo_find_one (mongoc_collection_t *collection, bson_t *query);
 
 // use a query to find all matching documents
+// returns a cursor that can be used to traverse the matching documents
+extern mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, bson_t *query, 
+	uint64_t *n_docs);
+
+// use a query to find all matching documents
 // an empty query will return all the docs
 extern bson_t **mongo_find_all (mongoc_collection_t *collection, bson_t *query, 
 	uint64_t *n_docs);

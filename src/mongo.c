@@ -182,6 +182,26 @@ const bson_t *mongo_find_one (mongoc_collection_t *collection, bson_t *query) {
 }
 
 // use a query to find all matching documents
+// returns a cursor that can be used to traverse the matching documents
+mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, bson_t *query, uint64_t *n_docs) {
+
+	mongoc_cursor_t *cursor = NULL;
+	*n_docs = 0;
+
+	if (collection && query) {
+		uint64_t count = mongo_count_docs (collection, bson_copy (query));
+		if (count > 0) {
+			mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
+
+			*n_docs = count;
+		}
+	}
+
+	return cursor;
+
+}
+
+// use a query to find all matching documents
 // an empty query will return all the docs in a collection
 bson_t **mongo_find_all (mongoc_collection_t *collection, bson_t *query, uint64_t *n_docs) {
 
