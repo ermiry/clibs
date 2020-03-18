@@ -101,7 +101,13 @@ static int test_insert_end_remove_start (void) {
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
 
-		if (i < 100) dlist_remove_element (list, NULL);
+		if (i < 100) {
+			Integer *query = (Integer *) malloc (sizeof (int));
+			query->value = i;
+
+			free (dlist_remove (list, query, NULL));
+			// free (dlist_remove_element (list, NULL));
+		} 
 	}
 
 	printf ("\nRemaining list item: %d -- size: %ld\n", ((Integer *) list->start->data)->value, list->size);
@@ -130,6 +136,57 @@ static int test_insert_end_remove_end (void) {
 	dlist_delete (list);
 
 	return 0;
+
+}
+
+static void test_traverse_method (void *list_element_data, void *method_args) {
+
+	printf ("%4d", ((Integer *) list_element_data)->value);
+
+}
+
+static void *test_traverse_method_thread (void *args) {
+
+	if (args) {
+		DoubleList *list = (DoubleList *) args;
+
+		dlist_traverse (list, test_traverse_method, NULL);
+		printf ("\n\n");
+	}
+
+}
+
+static int test_traverse (void) {
+
+	int retval = 0;
+
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 100; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		// integer->value = rand () % 99 + 1;
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	// create 4 threads
+	const unsigned int N_THREADS = 4;
+	pthread_t threads[N_THREADS];
+
+	pthread_create (&threads[0], NULL, test_traverse_method_thread, list);
+	pthread_create (&threads[1], NULL, test_traverse_method_thread, list);
+	pthread_create (&threads[2], NULL, test_traverse_method_thread, list);
+	pthread_create (&threads[3], NULL, test_traverse_method_thread, list);
+	pthread_join (threads[0], NULL);
+	pthread_join (threads[1], NULL);
+	pthread_join (threads[2], NULL);
+	pthread_join (threads[3], NULL);
+
+	// retval |= dlist_traverse (list, test_traverse_method, NULL);
+
+	dlist_delete (list);
+
+	return retval;
 
 }
 
@@ -391,13 +448,15 @@ int main (void) {
 
 	int res = 0;
 
-	res |= test_insert ();
+	// res |= test_insert ();
 
-	res |= test_remove ();
+	// res |= test_remove ();
 
-	res |= test_insert_end_remove_start ();
+	// res |= test_insert_end_remove_start ();
 
 	// return test_insert_end_remove_end ();
+
+	res |= test_traverse ();
 
 	// return test_sort ();
 

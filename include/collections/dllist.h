@@ -89,6 +89,12 @@ extern void *dlist_remove_at (DoubleList *dlist, unsigned int idx);
 
 /*** Traversing --- Searching ***/
 
+// traverses the dlist and for each element, calls the method by passing the list element data and the method args as both arguments
+// this method is thread safe
+// returns 0 on success, 1 on error
+extern int dlist_traverse (DoubleList *dlist, 
+	void (*method)(void *list_element_data, void *method_args), void *method_args);
+
 // uses the list comparator to search using the data as the query
 // option to pass a custom compare method for searching, if NULL, dlist's compare method will be used
 // returns the double list's element data
