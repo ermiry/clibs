@@ -83,6 +83,11 @@ static void *dlist_internal_remove_element (DoubleList *dlist, ListElement *elem
 
 			list_element_delete (old);
 			dlist->size--;
+
+			if (dlist->size == 0) {
+				dlist->start = NULL;
+				dlist->end = NULL;
+			}
 		}
 
 		return data;

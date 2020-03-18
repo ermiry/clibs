@@ -91,6 +91,48 @@ static int test_remove (void) {
 
 }
 
+static int test_insert_end_remove_start (void) {
+
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 101; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		// integer->value = rand () % 99 + 1;
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+
+		if (i < 100) dlist_remove_element (list, NULL);
+	}
+
+	printf ("\nRemaining list item: %d -- size: %ld\n", ((Integer *) list->start->data)->value, list->size);
+
+	dlist_delete (list);
+
+	return 0;
+
+}
+
+static int test_insert_end_remove_end (void) {
+
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 101; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		// integer->value = rand () % 99 + 1;
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+
+		if (i > 1 && i < 100) dlist_remove_element (list, list->end);
+	}
+
+	printf ("\nRemaining list item: %d -- size: %ld\n", ((Integer *) list->start->data)->value, list->size);
+
+	dlist_delete (list);
+
+	return 0;
+
+}
+
 static int test_sort (void) {
 
 	DoubleList *list = dlist_init (NULL, compare_int);
@@ -347,16 +389,22 @@ int main (void) {
 
 	srand ((unsigned) time (NULL));
 
-	// return test_insert ();
+	int res = 0;
 
-	// return test_remove ();
+	res |= test_insert ();
+
+	res |= test_remove ();
+
+	res |= test_insert_end_remove_start ();
+
+	// return test_insert_end_remove_end ();
 
 	// return test_sort ();
 
 	// return test_thread_safe ();
 
-	return test_remove_at ();
+	// return test_remove_at ();
 
-	return 0;
+	return res;
 
 }
