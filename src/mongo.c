@@ -124,6 +124,29 @@ mongoc_collection_t *mongo_collection_get (const char *coll_name) {
 
 }
 
+// drops a collection deleting all of its data
+// retuns 0 on success, 1 on error
+int mongo_collection_drop (mongoc_collection_t *collection) {
+
+	int retval = 1;
+
+	bson_error_t error;
+	if (mongoc_collection_drop (collection, &error)) {
+		retval = 0;
+	}
+
+	else {
+		char *status = c_string_create ("Failed to drop collection - %s", error.message);
+		if (status) {
+			log_error (status);
+			free (status);
+		}
+	}
+
+	return retval;
+
+}
+
 #pragma region CRUD
 
 // counts the docs in a collection by a matching query
