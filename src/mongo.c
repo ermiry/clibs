@@ -4,35 +4,37 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
-#include "../include/mongo.h"
+#include "mongo.h"
 
-#include "../include/types/string.h"
-#include "../include/utils/utils.h"
-#include "../include/utils/log.h"
+#include "types/string.h"
+#include "utils/utils.h"
+#include "utils/log.h"
 
 static MongoStatus status = MONGO_STATUS_DISCONNECTED;
 
 MongoStatus mongo_get_status (void) { return status; }
 
-static mongoc_uri_t *uri;
-static mongoc_client_t *client;
-static mongoc_database_t *database;
+static mongoc_uri_t *uri = NULL;
+static mongoc_client_t *client = NULL;
+static mongoc_database_t *database = NULL;
 
-static String *app_name = NULL;
-static String *uri_string = NULL;
+static String *host = NULL;
+
+void mongo_set_host (const char *h) { if (h) host = str_new (h); }
+
+static String *port = NULL;
+
+void mongo_set_port (const char *p) { if (p) port = str_new (p); }
+
+static String *username = NULL;
+
+void mongo_set_username (const char *u) { if (u) username = str_new (u); }
+
+static String *password = NULL;
+
+void mongo_set_password (const char *pswd) { if (pswd) password = str_new (pswd); }
+
 static String *db_name = NULL;
-
-void mongo_set_app_name (const char *name) {
-
-	if (name) app_name = str_new (name);
-
-}
-
-void mongo_set_uri (const char *uri) {
-
-	if (uri) uri_string = str_new (uri);
-
-}
 
 void mongo_set_db_name (const char *name) {
 
@@ -40,63 +42,141 @@ void mongo_set_db_name (const char *name) {
 
 }
 
-// ping the db to test for connection
+static String *app_name = NULL;
+
+void mongo_set_app_name (const char *name) {
+
+	if (name) app_name = str_new (name);
+
+}
+
+static String *uri_string = NULL;
+
+void mongo_set_uri (const char *uri) {
+
+	if (uri) uri_string = str_new (uri);
+
+}
+
+// generates a new uri string with the set values (username, password, host, port & db name)
+// that can be used to set as the uri for a new connection
+// returns the newly uri string (that should be freed) on success, NULL on error
+char *mongo_uri_generate (void) {
+
+	char *retval = NULL;
+
+	if (host && port && db_name) {
+		if (username && password) {
+			retval = c_string_create ("mongodb://%s:%s@%s:%s/%s", 
+				username->str, password->str, 
+				host->str, port->str,
+				db_name->str);
+		}
+
+		else {
+			retval = c_string_create ("mongodb://%s:%s/%s", 
+				host->str, port->str,
+				db_name->str);
+		}
+	}
+
+	return retval;
+
+}
+
+// pings the db to test for a success connection
+// Possible connection problems -- failed to authenticate to the db
 // returns 0 on success, 1 on error
 int mongo_ping_db (void) {
 
-	bson_t *command, reply, *insert;
-	bson_error_t error;
+	int retval = 1;
 
-	command = BCON_NEW ("ping", BCON_INT32 (1));
-	int retval = mongoc_client_command_simple (
-		client, "admin", command, NULL, &reply, &error);
+	if (client) {
+		if (db_name) {
+			bson_t *command, reply, *insert;
+			bson_error_t error;
 
-	if (!retval) {
-		fprintf (stderr, "\n%s\n", error.message);
-		return 1;
+			command = BCON_NEW ("ping", BCON_INT32 (1));
+			if (mongoc_client_command_simple (
+				client, 
+				db_name->str, 
+				command, 
+				NULL, 
+				&reply, 
+				&error)) {
+				// success
+				char *str = bson_as_json (&reply, NULL);
+				if (str) {
+					fprintf (stdout, "\n%s\n", str);
+					free (str);
+				}
+
+				retval = 0;
+			}
+
+			else {
+				char *status = c_string_create ("[MONGO] %s", error.message);
+				if (status) {
+					log_error (status);
+					free (status);
+				}
+			}
+		}
+
+		else {
+			log_error ("DB name hasn't been set! Use mongo_set_db_name ()");
+		}
 	}
 
-	char *str = bson_as_json (&reply, NULL);
-	if (str) {
-		fprintf (stdout, "\n%s\n", str);
-		free (str);
+	else {
+		log_error ("Not connected to mongo! Call mongo_connect () first");
 	}
 
-	return 0;
+	return retval;
 
 }
 
 // connect to the mongo db with db name
 int mongo_connect (void) {
 
-	bson_error_t error;
+	int retval = 1;
 
-	mongoc_init ();     // init mongo internals
+	if (uri_string) {
+		bson_error_t error;
 
-	// safely create mongo uri object
-	uri = mongoc_uri_new_with_error (uri_string->str, &error);
-	if (!uri) {
-		fprintf (stderr,
+		mongoc_init ();     // init mongo internals
+
+		// safely create mongo uri object
+		uri = mongoc_uri_new_with_error (uri_string->str, &error);
+		if (!uri) {
+			fprintf (stderr,
 				"failed to parse URI: %s\n"
 				"error message:       %s\n",
 				uri_string->str,
 				error.message);
-		return 1;
+			return 1;
+		}
+
+		// create a new client instance
+		client = mongoc_client_new_from_uri (uri);
+		if (!client) {
+			fprintf (stderr, "Failed to create a new client instance!\n");
+			return 1;
+		}
+
+		// register the app name -> for logging info
+		mongoc_client_set_appname (client, app_name->str);
+
+		status = MONGO_STATUS_CONNECTED;
+
+		retval = 0;
 	}
 
-	// create a new client instance
-	client = mongoc_client_new_from_uri (uri);
-	if (!client) {
-		fprintf (stderr, "Failed to create a new client instance!\n");
-		return 1;
+	else {
+		log_error ("Not uri string! Call mongo_set_uri () before attemting a connection");
 	}
 
-	// register the app name -> for logging info
-	mongoc_client_set_appname (client, app_name->str);
-
-	status = MONGO_STATUS_CONNECTED;
-
-	return 0;       // success
+	return retval;
 
 }
 
@@ -158,7 +238,7 @@ int64_t mongo_count_docs (mongoc_collection_t *collection, bson_t *query) {
 		bson_error_t error;
 		retval = mongoc_collection_count_documents (collection, query, NULL, NULL, NULL, &error);
 		if (retval < 0) {
-			cerver_log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("%s", error.message));
+			log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("%s", error.message));
 			retval = 0;
 		}
 
@@ -176,7 +256,7 @@ int mongo_insert_document (mongoc_collection_t *collection, bson_t *doc) {
 	bson_error_t error;
 
 	if (!mongoc_collection_insert_one (collection, doc, NULL, NULL, &error)) {
-		cerver_log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("%s", error.message));
+		log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("%s", error.message));
 		retval = 1;
 	}
 
@@ -271,7 +351,7 @@ int mongo_update_one (mongoc_collection_t *collection, bson_t *query, bson_t *up
 			retval = 0;
 
 		else
-			cerver_log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Failed to update doc: %s", error.message));
+			log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Failed to update doc: %s", error.message));
 
 		bson_destroy (query);
 		bson_destroy (update);
@@ -290,7 +370,7 @@ int mongo_delete_one (mongoc_collection_t *collection, bson_t *query) {
 		bson_error_t error;
 
 		if (!mongoc_collection_delete_one (collection, query, NULL, NULL, &error)) {
-			cerver_log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Delete failed: %s", error.message));
+			log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Delete failed: %s", error.message));
 			retval = 1;
 		}
 
@@ -311,7 +391,7 @@ int mongo_delete_many (mongoc_collection_t *collection, bson_t *query) {
 		bson_error_t error;
 
 		if (!mongoc_collection_delete_many (collection, query, NULL, NULL, &error)) {
-			cerver_log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Delete failed: %s", error.message));
+			log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Delete failed: %s", error.message));
 			retval = 1;
 		}
 

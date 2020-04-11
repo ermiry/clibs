@@ -13,13 +13,27 @@ typedef enum MongoStatus {
 
 extern MongoStatus mongo_get_status (void);
 
+extern void mongo_set_host (const char *h);
+
+extern void mongo_set_port (const char *p);
+
+extern void mongo_set_username (const char *u);
+
+extern void mongo_set_password (const char *pswd);
+
+extern void mongo_set_db_name (const char *name);
+
 extern void mongo_set_app_name (const char *name);
 
 extern void mongo_set_uri (const char *uri);
 
-extern void mongo_set_db_name (const char *name);
+// generates a new uri string with the set values (username, password, host, port & db name)
+// that can be used to set as the uri for a new connection
+// returns the newly uri string (that should be freed) on success, NULL on error
+extern char *mongo_uri_generate (void);
 
-// ping the db to test for connection
+// pings the db to test for a success connection
+// Possible connection problems -- failed to authenticate to the db
 // returns 0 on success, 1 on error
 extern int mongo_ping_db (void);
 
