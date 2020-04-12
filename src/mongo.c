@@ -186,6 +186,11 @@ void mongo_disconnect (void) {
 	mongoc_database_destroy (database);
 	mongoc_uri_destroy (uri);
 	mongoc_client_destroy (client);
+
+	str_delete (host);
+	str_delete (port);
+	str_delete (username);
+	str_delete (password);
 	
 	str_delete (app_name);
 	str_delete (uri_string);
