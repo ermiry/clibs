@@ -605,7 +605,7 @@ void **dlist_to_array (DoubleList *dlist, size_t *count) {
 	void **array = NULL;
 
 	if (dlist) {
-		array = calloc (dlist->size, sizeof (void *));
+		array = (void **) calloc (dlist->size, sizeof (void *));
 		if (array) {
 			unsigned int idx = 0;
 			ListElement *ptr = dlist_start (dlist);
