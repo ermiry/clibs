@@ -436,6 +436,56 @@ static int test_remove_at (void) {
 
 }
 
+static int test_array (void) {
+
+	int retval = 1;
+
+	// create a global list
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 10; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	printf ("Elements in list: \n");
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+
+	size_t count = 0;
+	void **array = dlist_to_array (list, &count);
+	if (array) {
+		dlist_clean (list);
+
+		printf ("Elements in array: \n");
+		for (size_t idx = 0; idx < count; idx++) {
+			printf ("%3d ", ((Integer *) array[idx])->value);
+		}
+
+		printf ("\n\nList is %ld long\n", list->size);
+		printf ("Array is %ld long\n", count);
+
+		// clear array
+		for (size_t idx = 0; idx < count; idx++) {
+			free (array[idx]);
+		}
+
+		free (array);
+
+		retval = 0;
+	}
+
+	dlist_delete (list);
+
+	return retval;
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from test directory...
 // mkdir bin
@@ -456,13 +506,15 @@ int main (void) {
 
 	// return test_insert_end_remove_end ();
 
-	res |= test_traverse ();
+	// res |= test_traverse ();
 
 	// return test_sort ();
 
 	// return test_thread_safe ();
 
 	// return test_remove_at ();
+
+	res |= test_array ();
 
 	return res;
 
