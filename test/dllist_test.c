@@ -486,6 +486,39 @@ static int test_array (void) {
 
 }
 
+static int test_empty (void) {
+
+	int retval = 1;
+
+	// create a global list
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	if (dlist_is_empty (list)) printf ("List is empty\n");
+	if (dlist_is_not_empty (list)) printf ("List is not empty\n");
+
+	for (int i = 0; i < 10; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	printf ("Elements in list: \n");
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+
+	if (dlist_is_empty (list)) printf ("List is empty\n");
+	if (dlist_is_not_empty (list)) printf ("List is not empty\n");
+
+	dlist_delete (list);
+
+	return retval;
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from test directory...
 // mkdir bin
@@ -514,7 +547,9 @@ int main (void) {
 
 	// return test_remove_at ();
 
-	res |= test_array ();
+	// res |= test_array ();
+
+	res |= test_empty ();
 
 	return res;
 
