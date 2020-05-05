@@ -127,6 +127,24 @@ void dlist_delete (void *dlist_ptr) {
 
 }
 
+// only deletes the list if its empty (size == 0)
+void dlist_delete_if_empty (void *dlist_ptr) {
+
+	if (dlist_ptr) {
+		if (((DoubleList *) dlist_ptr)->size == 0) dlist_delete (dlist_ptr);
+	}
+
+}
+
+// only deletes the list if its NOT empty (size > 0)
+void dlist_delete_if_not_empty (void *dlist_ptr) {
+
+	if (dlist_ptr) {
+		if (((DoubleList *) dlist_ptr)->size > 0) dlist_delete (dlist_ptr);
+	}
+
+}
+
 void dlist_set_compare (DoubleList *dlist, int (*compare)(const void *one, const void *two)) { if (dlist) dlist->compare = compare; }
 
 void dlist_set_destroy (DoubleList *dlist, void (*destroy)(void *data)) { if (dlist) dlist->destroy = destroy; }
@@ -176,9 +194,11 @@ void dlist_reset (DoubleList *dlist) {
 
 // only gets rid of the list elements, but the data is kept
 // this is usefull if another dlist or structure points to the same data
-void dlist_clear (DoubleList *dlist) {
+void dlist_clear (void *dlist_ptr) {
 
-	if (dlist) {
+	if (dlist_ptr) {
+		DoubleList *dlist = (DoubleList *) dlist_ptr;
+
 		pthread_mutex_lock (dlist->mutex);
 
 		void *data = NULL;
@@ -195,10 +215,19 @@ void dlist_clear (DoubleList *dlist) {
 void dlist_clear_and_delete (void *dlist_ptr) {
 
 	if (dlist_ptr) {
-		DoubleList *dlist = (DoubleList *) dlist_ptr;
+		dlist_clear (dlist_ptr);
+		dlist_delete (dlist_ptr);
+	}
 
-		dlist_clear (dlist);
-		dlist_delete (dlist);
+}
+
+// clears the dlist if it is NOT empty
+// deletes the dlist if it is EMPTY
+void dlist_clear_or_delete (void *dlist_ptr) {
+
+	if (dlist_ptr) {
+		if (((DoubleList *) dlist_ptr)->size > 0) dlist_clear (dlist_ptr);
+		else dlist_delete (dlist_ptr);
 	}
 
 }
@@ -623,6 +652,8 @@ int dlist_sort (DoubleList *dlist, int (*compare)(const void *one, const void *t
 
 /*** Other ***/
 
+// returns a newly allocated array with the list elements inside it
+// data will not be copied, only the pointers, so the list will keep the original elements
 void **dlist_to_array (DoubleList *dlist, size_t *count) {
 
 	void **array = NULL;
