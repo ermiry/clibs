@@ -515,6 +515,60 @@ static int test_empty (void) {
 
 	dlist_delete (list);
 
+	retval = 0;
+
+	return retval;
+
+}
+
+static void *integer_clone (const void *original) {
+
+	Integer *cloned_integer = NULL;
+
+	if (original) {
+		cloned_integer = integer_new (((Integer *) original)->value);
+	}
+
+	return cloned_integer;
+
+}
+
+static int test_clone (void) {
+
+	int retval = 1;
+
+	// create a global list
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 10; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	DoubleList *clone = dlist_clone (list, integer_clone);
+
+	printf ("Elements in original list: \n");
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+
+	printf ("Elements in cloned list: \n");
+	for (ListElement *le = dlist_start (clone); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+
+	dlist_delete (list);
+	dlist_delete (clone);
+
+	retval = 0;
+
 	return retval;
 
 }
@@ -549,7 +603,9 @@ int main (void) {
 
 	// res |= test_array ();
 
-	res |= test_empty ();
+	// res |= test_empty ();
+
+	res |= test_clone ();
 
 	return res;
 

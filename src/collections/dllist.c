@@ -677,3 +677,29 @@ void **dlist_to_array (DoubleList *dlist, size_t *count) {
 	return array;
 
 }
+
+// returns a exact cloen of the dlist
+// the element's data are created using your clone method
+	// which takes as the original each element's data of the dlist
+	// and should return the same structure type as the original method that can be safely deleted
+	// with the dlist's delete method
+// the dlist's delete and comparator methods are set from the original
+DoubleList *dlist_clone (DoubleList *dlist, void *(*clone) (const void *original)) {
+
+	DoubleList *dlist_clone = NULL;
+
+	if (dlist && clone) {
+		dlist_clone = dlist_init (dlist->destroy, dlist->compare);
+
+		for (ListElement *le = dlist_start (dlist); le; le = le->next) {
+			dlist_insert_after (
+				dlist_clone,
+				dlist_end (dlist_clone),
+				clone (le->data)
+			);
+		}
+	}
+
+	return dlist_clone;
+
+}

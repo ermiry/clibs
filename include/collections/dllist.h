@@ -144,4 +144,12 @@ extern int dlist_sort (DoubleList *dlist, int (*compare)(const void *one, const 
 // data will not be copied, only the pointers, so the list will keep the original elements
 extern void **dlist_to_array (DoubleList *dlist, size_t *count);
 
+// returns a exact cloen of the dlist
+// the element's data are created using your clone method
+	// which takes as the original each element's data of the dlist
+	// and should return the same structure type as the original method that can be safely deleted
+	// with the dlist's delete method
+// the dlist's delete and comparator methods are set from the original
+extern DoubleList *dlist_clone (DoubleList *dlist, void *(*clone) (const void *original));
+
 #endif
