@@ -460,7 +460,7 @@ static int test_array (void) {
 	size_t count = 0;
 	void **array = dlist_to_array (list, &count);
 	if (array) {
-		dlist_clean (list);
+		dlist_clear (list);
 
 		printf ("Elements in array: \n");
 		for (size_t idx = 0; idx < count; idx++) {
