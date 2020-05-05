@@ -678,7 +678,31 @@ void **dlist_to_array (DoubleList *dlist, size_t *count) {
 
 }
 
-// returns a exact cloen of the dlist
+// returns a exact copy of the dlist
+// creates the dlist's elements using the same data pointers as in the original dlist
+// be carefull which dlist you delete first, as the other should use dlist_clear first before delete
+// the dlist's delete and comparator methods are set from the original
+DoubleList *dlist_copy (DoubleList *dlist) {
+
+	DoubleList *copy = NULL;
+
+	if (dlist) {
+		copy = dlist_init (dlist->destroy, dlist->compare);
+
+		for (ListElement *le = dlist_start (dlist); le; le = le->next) {
+			dlist_insert_after (
+				copy,
+				dlist_end (copy),
+				le->data
+			);
+		}
+	}
+
+	return copy;
+
+}
+
+// returns a exact clone of the dlist
 // the element's data are created using your clone method
 	// which takes as the original each element's data of the dlist
 	// and should return the same structure type as the original method that can be safely deleted

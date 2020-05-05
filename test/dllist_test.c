@@ -521,6 +521,48 @@ static int test_empty (void) {
 
 }
 
+static int test_copy (void) {
+
+	int retval = 1;
+
+	// create a global list
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 10; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	DoubleList *copy = dlist_copy (list);
+
+	printf ("Elements in original list: \n");
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+
+	printf ("Elements in copied list: \n");
+	for (ListElement *le = dlist_start (copy); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+
+	dlist_delete (list);
+	dlist_clear (copy);
+	dlist_delete (copy);
+
+	retval = 0;
+
+	return retval;
+
+}
+
+
 static void *integer_clone (const void *original) {
 
 	Integer *cloned_integer = NULL;
@@ -605,7 +647,9 @@ int main (void) {
 
 	// res |= test_empty ();
 
-	res |= test_clone ();
+	res |= test_copy ();
+
+	// res |= test_clone ();
 
 	return res;
 
