@@ -158,6 +158,10 @@ extern DoubleList *dlist_copy (DoubleList *dlist);
 // the dlist's delete and comparator methods are set from the original
 extern DoubleList *dlist_clone (DoubleList *dlist, void *(*clone) (const void *original));
 
+// splits the original dlist into two halfs
+// if dlist->size is odd, extra element will be left in the first half (dlist)
+// both lists can be safely deleted
+// the new dlist's delete and comparator methods are set from the original
 extern DoubleList *dlist_split_half (DoubleList *dlist);
 
 #endif

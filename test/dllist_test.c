@@ -58,7 +58,7 @@ static int test_remove (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 1000; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		// integer->value = rand () % 99 + 1;
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
@@ -96,7 +96,7 @@ static int test_insert_end_remove_start (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 101; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		// integer->value = rand () % 99 + 1;
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
@@ -123,7 +123,7 @@ static int test_insert_end_remove_end (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 101; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		// integer->value = rand () % 99 + 1;
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
@@ -163,7 +163,7 @@ static int test_traverse (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 100; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		// integer->value = rand () % 99 + 1;
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
@@ -195,7 +195,7 @@ static int test_sort (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 100; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		integer->value = rand () % 99 + 1;
 		dlist_insert_after (list, dlist_start (list), integer);
 	}
@@ -219,7 +219,7 @@ static void *test_thread_add (void *args) {
 
 		// add ten items at the list end
 		for (unsigned int i = 0; i < 100; i++) {
-			Integer *integer = (Integer *) malloc (sizeof (int));
+			Integer *integer = (Integer *) malloc (sizeof (Integer));
 			// integer->value = rand () % 99 + 1;
 			integer->value = i;
 			dlist_insert_after (list, dlist_end (list), integer);
@@ -249,7 +249,7 @@ static void *test_thread_search (void *args) {
 
 		// get 10 random values from the list
 		for (unsigned int i = 0; i < 10; i++) {
-			Integer *integer = (Integer *) malloc (sizeof (int));
+			Integer *integer = (Integer *) malloc (sizeof (Integer));
 			integer->value = rand () % 99 + 1;
 
 			printf ("Searching: %d...\n", integer->value);
@@ -269,7 +269,7 @@ static void *test_thread_get_element (void *args) {
 
 		// get 10 random values from the list
 		for (unsigned int i = 0; i < 10; i++) {
-			Integer *integer = (Integer *) malloc (sizeof (int));
+			Integer *integer = (Integer *) malloc (sizeof (Integer));
 			integer->value = rand () % 999 + 1;
 
 			printf ("Getting element for: %d...\n", integer->value);
@@ -363,7 +363,7 @@ static int test_get_at (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 100; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
 	}
@@ -395,7 +395,7 @@ static int test_remove_at (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 10; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
 	}
@@ -444,7 +444,7 @@ static int test_array (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 10; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
 	}
@@ -497,7 +497,7 @@ static int test_empty (void) {
 	if (dlist_is_not_empty (list)) printf ("List is not empty\n");
 
 	for (int i = 0; i < 10; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
 	}
@@ -529,7 +529,7 @@ static int test_copy (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 10; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
 	}
@@ -583,7 +583,7 @@ static int test_clone (void) {
 	DoubleList *list = dlist_init (NULL, compare_int);
 
 	for (int i = 0; i < 10; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
 	}
@@ -622,8 +622,8 @@ static int test_split_half (void) {
 	// create a global list
 	DoubleList *list = dlist_init (NULL, compare_int);
 
-	for (int i = 0; i < 11; i++) {
-		Integer *integer = (Integer *) malloc (sizeof (int));
+	for (int i = 0; i < 3; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
 	}
@@ -654,6 +654,42 @@ static int test_split_half (void) {
 		Integer *integer = (Integer *) le->data;
 		printf ("%3d ", integer->value);
 	}
+
+	printf ("\n");
+	printf ("\n");
+
+	printf ("Insert at end FIRST half:\n");
+	for (int i = 0; i < 5; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	printf ("FIRST half size: %ld\n", list->size);
+	printf ("Elements in FIRST half: \n");
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+	printf ("\n");
+	printf ("Insert at start SECOND half:\n");
+	for (int i = 0; i < 5; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_before (split, NULL, integer);
+	}
+
+	printf ("SECOND half size: %ld\n", split->size);
+	printf ("Elements in SECOND half: \n");
+	for (ListElement *le = dlist_start (split); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+	printf ("\n");
 
 	dlist_delete (list);
 	dlist_delete (split);
