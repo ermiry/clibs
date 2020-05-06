@@ -727,3 +727,34 @@ DoubleList *dlist_clone (DoubleList *dlist, void *(*clone) (const void *original
 	return dlist_clone;
 
 }
+
+DoubleList *dlist_split_half (DoubleList *dlist) {
+
+	DoubleList *half = NULL;
+
+	if (dlist) {
+		half = dlist_init (dlist->destroy, dlist->compare);
+
+		size_t carry = dlist->size % 2;
+		size_t half_count = dlist->size / 2;
+		half_count += carry;
+		size_t count = 0;
+		for (ListElement *le = dlist_start (dlist); le; le = le->next) {
+			if (count == half_count) {
+				le->prev->next = NULL;
+				le->prev = NULL;
+
+				half->size = dlist->size - half_count;
+				dlist->size = half_count;
+
+				half->start = le;
+				break;
+			}
+
+			count++;
+		}
+	}
+
+	return half;
+
+}

@@ -615,6 +615,55 @@ static int test_clone (void) {
 
 }
 
+static int test_split_half (void) {
+
+	int retval = 1;
+
+	// create a global list
+	DoubleList *list = dlist_init (NULL, compare_int);
+
+	for (int i = 0; i < 11; i++) {
+		Integer *integer = (Integer *) malloc (sizeof (int));
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	printf ("ORIGINAL half size: %ld\n", list->size);
+	printf ("Elements in ORIGINAL list: \n");
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+
+	DoubleList *split = dlist_split_half (list);
+
+	printf ("\nFIRST half size: %ld\n", list->size);
+	printf ("Elements in FIRST half: \n");
+	for (ListElement *le = dlist_start (list); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	printf ("\n");
+
+	printf ("\nSECOND half size: %ld\n", split->size);
+	printf ("Elements in SECOND half: \n");
+	for (ListElement *le = dlist_start (split); le != NULL; le = le->next) {
+		Integer *integer = (Integer *) le->data;
+		printf ("%3d ", integer->value);
+	}
+
+	dlist_delete (list);
+	dlist_delete (split);
+
+	retval = 0;
+
+	return retval;
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from test directory...
 // mkdir bin
@@ -647,9 +696,11 @@ int main (void) {
 
 	// res |= test_empty ();
 
-	res |= test_copy ();
+	// res |= test_copy ();
 
 	// res |= test_clone ();
+
+	res = test_split_half ();
 
 	return res;
 
