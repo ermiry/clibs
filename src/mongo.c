@@ -299,7 +299,7 @@ mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, bson_t 
 	if (collection && query) {
 		uint64_t count = mongo_count_docs (collection, bson_copy (query));
 		if (count > 0) {
-			mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
+			cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
 			*n_docs = count;
 		}
