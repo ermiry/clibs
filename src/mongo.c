@@ -1,14 +1,52 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
+#include <stdarg.h>
 
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
+#include "types/string.h"
+
+#include "collections/dllist.h"
+
 #include "mongo.h"
 
-#include "types/string.h"
-#include "utils/utils.h"
-#include "utils/log.h"
+// creates a new c string with the desired format, as in printf
+static char *mongo_c_string_create (const char *format, ...) {
+
+    char *fmt;
+
+    if (format != NULL) fmt = strdup (format);
+    else fmt = strdup ("");
+
+    va_list argp;
+    va_start (argp, format);
+    char oneChar[1];
+    int len = vsnprintf (oneChar, 1, fmt, argp);
+    if (len < 1) return NULL;
+    va_end (argp);
+
+    char *str = (char *) calloc (len + 1, sizeof (char));
+    if (!str) return NULL;
+
+    va_start (argp, format);
+    vsnprintf (str, len + 1, fmt, argp);
+    va_end (argp);
+
+    free (fmt);
+
+    return str;
+
+}
+
+// prints a red error message to stderr
+static void mongo_log_error (const char *msg) {
+
+	if (msg) fprintf (stderr, "\x1b[31m" "[ERROR]: " "%s\n" "\x1b[0m", msg);
+
+}
 
 static MongoStatus status = MONGO_STATUS_DISCONNECTED;
 
@@ -67,14 +105,14 @@ char *mongo_uri_generate (void) {
 
 	if (host && port && db_name) {
 		if (username && password) {
-			retval = c_string_create ("mongodb://%s:%s@%s:%s/%s", 
+			retval = mongo_c_string_create ("mongodb://%s:%s@%s:%s/%s", 
 				username->str, password->str, 
 				host->str, port->str,
 				db_name->str);
 		}
 
 		else {
-			retval = c_string_create ("mongodb://%s:%s/%s", 
+			retval = mongo_c_string_create ("mongodb://%s:%s/%s", 
 				host->str, port->str,
 				db_name->str);
 		}
@@ -115,21 +153,21 @@ int mongo_ping_db (void) {
 			}
 
 			else {
-				char *status = c_string_create ("[MONGO] %s", error.message);
+				char *status = mongo_c_string_create ("[MONGO] %s", error.message);
 				if (status) {
-					log_error (status);
+					mongo_log_error (status);
 					free (status);
 				}
 			}
 		}
 
 		else {
-			log_error ("DB name hasn't been set! Use mongo_set_db_name ()");
+			mongo_log_error ("DB name hasn't been set! Use mongo_set_db_name ()");
 		}
 	}
 
 	else {
-		log_error ("Not connected to mongo! Call mongo_connect () first");
+		mongo_log_error ("Not connected to mongo! Call mongo_connect () first");
 	}
 
 	return retval;
@@ -153,14 +191,16 @@ int mongo_connect (void) {
 				"failed to parse URI: %s\n"
 				"error message:       %s\n",
 				uri_string->str,
-				error.message);
+				error.message
+			);
+
 			return 1;
 		}
 
 		// create a new client instance
 		client = mongoc_client_new_from_uri (uri);
 		if (!client) {
-			fprintf (stderr, "Failed to create a new client instance!\n");
+			mongo_log_error ("Failed to create a new client instance!\n");
 			return 1;
 		}
 
@@ -173,7 +213,7 @@ int mongo_connect (void) {
 	}
 
 	else {
-		log_error ("Not uri string! Call mongo_set_uri () before attemting a connection");
+		mongo_log_error ("Not uri string! Call mongo_set_uri () before attemting a connection");
 	}
 
 	return retval;
@@ -221,9 +261,9 @@ int mongo_collection_drop (mongoc_collection_t *collection) {
 	}
 
 	else {
-		char *status = c_string_create ("Failed to drop collection - %s", error.message);
+		char *status = mongo_c_string_create ("Failed to drop collection - %s", error.message);
 		if (status) {
-			log_error (status);
+			mongo_log_error (status);
 			free (status);
 		}
 	}
@@ -243,7 +283,12 @@ int64_t mongo_count_docs (mongoc_collection_t *collection, bson_t *query) {
 		bson_error_t error;
 		retval = mongoc_collection_count_documents (collection, query, NULL, NULL, NULL, &error);
 		if (retval < 0) {
-			log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("%s", error.message));
+			char *status = mongo_c_string_create ("%s", error.message);
+			if (status) {
+				mongo_log_error (status);
+				free (status);
+			}
+
 			retval = 0;
 		}
 
@@ -254,44 +299,37 @@ int64_t mongo_count_docs (mongoc_collection_t *collection, bson_t *query) {
 
 }
 
-// inserts a document into a collection
-int mongo_insert_document (mongoc_collection_t *collection, bson_t *doc) {
+static bson_t *mongo_find_generate_opts (DoubleList *select) {
 
-	int retval = 0;
-	bson_error_t error;
+	bson_t *opts = bson_new ();
 
-	if (!mongoc_collection_insert_one (collection, doc, NULL, NULL, &error)) {
-		log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("%s", error.message));
-		retval = 1;
+	if (opts) {
+		// append projection
+		if (select) {
+			bson_t projection_doc;
+			bson_append_document_begin (opts, "projection", -1, &projection_doc);
+
+			String *field = NULL;
+			for (ListElement *le = dlist_start (select); le; le = le->next) {
+				field = (String *) le->data;
+				bson_append_bool (&projection_doc, field->str, field->len, true);
+			}
+			
+			bson_append_document_end (opts, &projection_doc);
+		}
 	}
 
-	bson_destroy (doc);
-
-	return retval;
-
-}
-
-// use a query to find one doc
-const bson_t *mongo_find_one (mongoc_collection_t *collection, bson_t *query) {
-
-	const bson_t *doc = NULL;
-
-	if (collection && query) {
-		mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
-
-		mongoc_cursor_next (cursor, &doc);
-
-		bson_destroy (query);
-		mongoc_cursor_destroy (cursor);
-	}
-
-	return doc;
+	return opts;
 
 }
 
 // use a query to find all matching documents
-// returns a cursor that can be used to traverse the matching documents
-mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, bson_t *query, uint64_t *n_docs) {
+// select is a dlist of strings used for document projection, _id is true by default and should not be incldued
+// returns a cursor (should be destroyed) that can be used to traverse the matching documents
+// query gets destroyed, select list remains the same
+mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, 
+	bson_t *query, DoubleList *select,
+	uint64_t *n_docs) {
 
 	mongoc_cursor_t *cursor = NULL;
 	*n_docs = 0;
@@ -299,9 +337,14 @@ mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, bson_t 
 	if (collection && query) {
 		uint64_t count = mongo_count_docs (collection, bson_copy (query));
 		if (count > 0) {
-			cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
+			bson_t *opts = mongo_find_generate_opts (select);
+
+			cursor = mongoc_collection_find_with_opts (collection, query, opts, NULL);
 
 			*n_docs = count;
+
+			if (opts) bson_destroy (opts);
+			bson_destroy (query);
 		}
 	}
 
@@ -343,8 +386,94 @@ bson_t **mongo_find_all (mongoc_collection_t *collection, bson_t *query, uint64_
 
 }
 
-// updates a doc by a matching query with the new values;
-// destroys query and update bson_t
+// use a query to find one doc
+// select is a dlist of strings used for document projection, _id is true by default and should not be incldued
+// query gets destroyed, select list remains the same
+const bson_t *mongo_find_one (mongoc_collection_t *collection, bson_t *query, DoubleList *select) {
+
+	const bson_t *doc = NULL;
+
+	if (collection && query) {
+		bson_t *opts = mongo_find_generate_opts (select);
+
+		mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, query, opts, NULL);
+		mongoc_cursor_set_limit (cursor, 1);
+
+		mongoc_cursor_next (cursor, &doc);
+
+		bson_destroy (query);
+		mongoc_cursor_destroy (cursor);
+	}
+
+	return doc;
+
+}
+
+// inserts a document into a collection
+// destroys document
+// returns 0 on success, 1 on error
+int mongo_insert_one (mongoc_collection_t *collection, bson_t *doc) {
+
+	int retval = 1;
+
+	if (collection && doc) {
+		bson_error_t error;
+
+		if (mongoc_collection_insert_one (collection, doc, NULL, NULL, &error)) {
+			retval = 0;		// success
+		}
+
+		else {
+			char *status = mongo_c_string_create ("Insert failed: %s", error.message);
+			if (status) {
+				mongo_log_error (status);
+				free (status);
+			}
+		}
+
+		bson_destroy (doc);
+	}
+
+	return retval;
+
+}
+
+// inserts many documents into a collection
+// returns 0 on success, 1 on error
+int mongo_insert_many (mongoc_collection_t *collection, const bson_t **docs, size_t n_docs) {
+
+	int retval = 1;
+
+	if (collection && docs) {
+		bson_error_t error;
+
+		if (mongoc_collection_insert_many (collection, docs, n_docs, NULL, NULL, &error)) {
+			retval = 0;		// success
+		}
+
+		else {
+			char *status = mongo_c_string_create ("Insert failed: %s", error.message);
+			if (status) {
+				mongo_log_error (status);
+				free (status);
+			}
+		}
+
+		// for (size_t i = 0; i < n_docs; i++) {
+		// 	bson_destroy (docs[i]);
+		// }
+
+		// free (docs);
+	}
+
+	return retval;
+
+}
+
+
+// updates a doc by a matching query with the new values
+// destroys query and update documents
+// returns 0 on success, 1 on error
 int mongo_update_one (mongoc_collection_t *collection, bson_t *query, bson_t *update) {
 
 	int retval = 1;
@@ -352,11 +481,47 @@ int mongo_update_one (mongoc_collection_t *collection, bson_t *query, bson_t *up
 	if (collection && query && update) {
 		bson_error_t error;
 
-		if (mongoc_collection_update_one (collection, query, update, NULL, NULL, &error)) 
-			retval = 0;
+		if (mongoc_collection_update_one (collection, query, update, NULL, NULL, &error)) {
+			retval = 0;		// success
+		}
 
-		else
-			log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Failed to update doc: %s", error.message));
+		else {
+			char *status = mongo_c_string_create ("Update failed: %s", error.message);
+			if (status) {
+				mongo_log_error (status);
+				free (status);
+			}
+		}
+
+		bson_destroy (query);
+		bson_destroy (update);
+	}
+
+	return retval;
+
+}
+
+// updates all the query matching documents
+// destroys the query and the update documents
+// returns 0 on success, 1 on error
+int mongo_update_many (mongoc_collection_t *collection, bson_t *query, bson_t *update) {
+
+	int retval = 0;
+
+	if (collection && query && update) {
+		bson_error_t error;
+
+		if (mongoc_collection_update_many (collection, query, update, NULL, NULL, &error)) {
+			retval = 0;		// success
+		}
+
+		else {
+			char *status = mongo_c_string_create ("Update failed: %s", error.message);
+			if (status) {
+				mongo_log_error (status);
+				free (status);
+			}
+		}
 
 		bson_destroy (query);
 		bson_destroy (update);
@@ -367,6 +532,8 @@ int mongo_update_one (mongoc_collection_t *collection, bson_t *query, bson_t *up
 }
 
 // deletes one matching document by a query
+// destroys the query document
+// returns 0 on success, 1 on error
 int mongo_delete_one (mongoc_collection_t *collection, bson_t *query) {
 
 	int retval = 0;
@@ -374,9 +541,16 @@ int mongo_delete_one (mongoc_collection_t *collection, bson_t *query) {
 	if (collection && query) {
 		bson_error_t error;
 
-		if (!mongoc_collection_delete_one (collection, query, NULL, NULL, &error)) {
-			log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Delete failed: %s", error.message));
-			retval = 1;
+		if (mongoc_collection_delete_one (collection, query, NULL, NULL, &error)) {
+			retval = 0;		// success
+		}
+
+		else {
+			char *status = mongo_c_string_create ("Delete failed: %s", error.message);
+			if (status) {
+				mongo_log_error (status);
+				free (status);
+			}
 		}
 
 		bson_destroy (query);
@@ -388,6 +562,7 @@ int mongo_delete_one (mongoc_collection_t *collection, bson_t *query) {
 
 // deletes all the query matching documents
 // destroys the query
+// returns 0 on success, 1 on error
 int mongo_delete_many (mongoc_collection_t *collection, bson_t *query) {
 
 	int retval = 0;
@@ -395,9 +570,16 @@ int mongo_delete_many (mongoc_collection_t *collection, bson_t *query) {
 	if (collection && query) {
 		bson_error_t error;
 
-		if (!mongoc_collection_delete_many (collection, query, NULL, NULL, &error)) {
-			log_msg (stderr, LOG_ERROR, LOG_NO_TYPE, c_string_create ("Delete failed: %s", error.message));
-			retval = 1;
+		if (mongoc_collection_delete_many (collection, query, NULL, NULL, &error)) {
+			retval = 0;		// success
+		}
+
+		else {
+			char *status = mongo_c_string_create ("Delete failed: %s", error.message);
+			if (status) {
+				mongo_log_error (status);
+				free (status);
+			}
 		}
 
 		bson_destroy (query);

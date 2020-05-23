@@ -4,6 +4,8 @@
 #include <mongoc/mongoc.h>
 #include <bson/bson.h>
 
+#include "collections/dllist.h"
+
 typedef enum MongoStatus {
 
 	MONGO_STATUS_DISCONNECTED		= 0,
@@ -55,15 +57,12 @@ extern int mongo_collection_drop (mongoc_collection_t *collection);
 // counts the docs in a collection by a matching query
 extern int64_t mongo_count_docs (mongoc_collection_t *collection, bson_t *query);
 
-// inserts a document into a collection
-extern int mongo_insert_document (mongoc_collection_t *collection, bson_t *doc);
-
-// use a query to find one doc
-extern const bson_t *mongo_find_one (mongoc_collection_t *collection, bson_t *query);
-
 // use a query to find all matching documents
-// returns a cursor that can be used to traverse the matching documents
-extern mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, bson_t *query, 
+// select is a dlist of strings used for document projection, _id is true by default and should not be incldued
+// returns a cursor (should be destroyed) that can be used to traverse the matching documents
+// query gets destroyed, select list remains the same
+extern mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, 
+	bson_t *query, DoubleList *select,
 	uint64_t *n_docs);
 
 // use a query to find all matching documents
@@ -71,17 +70,38 @@ extern mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection, 
 extern bson_t **mongo_find_all (mongoc_collection_t *collection, bson_t *query, 
 	uint64_t *n_docs);
 
+// use a query to find one doc
+// select is a dlist of strings used for document projection, _id is true by default and should not be incldued
+// query gets destroyed, select list remains the same
+const bson_t *mongo_find_one (mongoc_collection_t *collection, bson_t *query, DoubleList *select);
+
+// inserts a document into a collection
+// destroys document
+// returns 0 on success, 1 on error
+extern int mongo_insert_one (mongoc_collection_t *collection, bson_t *doc);
+
+// inserts many documents into a collection
+// returns 0 on success, 1 on error
+extern int mongo_insert_many (mongoc_collection_t *collection, const bson_t **docs, size_t n_docs);
+
 // updates a doc by a matching query with the new values
-// destroys query and update bson_t
-extern int mongo_update_one (mongoc_collection_t *collection, bson_t *query, 
-	bson_t *update);
+// destroys query and update documents
+// returns 0 on success, 1 on error
+extern int mongo_update_one (mongoc_collection_t *collection, bson_t *query, bson_t *update);
+
+// updates all the query matching documents
+// destroys the query and the update documents
+// returns 0 on success, 1 on error
+extern int mongo_update_many (mongoc_collection_t *collection, bson_t *query, bson_t *update);
 
 // deletes one matching document by a query
-// destroys the query
+// destroys the query document
+// returns 0 on success, 1 on error
 extern int mongo_delete_one (mongoc_collection_t *collection, bson_t *query);
 
 // deletes all the query matching documents
 // destroys the query
+// returns 0 on success, 1 on error
 extern int mongo_delete_many (mongoc_collection_t *collection, bson_t *query);
 
 #pragma endregion
