@@ -9,7 +9,7 @@
 
 #include "types/string.h"
 
-#include "collections/dllist.h"
+#include "../include/collections/dllist.h"
 
 #include "mongo.h"
 
@@ -308,6 +308,8 @@ static bson_t *mongo_find_generate_opts (DoubleList *select) {
 		if (select) {
 			bson_t projection_doc;
 			bson_append_document_begin (opts, "projection", -1, &projection_doc);
+
+			bson_append_bool (&projection_doc, "_id", -1, true);
 
 			String *field = NULL;
 			for (ListElement *le = dlist_start (select); le; le = le->next) {
