@@ -718,15 +718,15 @@ int main (void) {
 
 	// res |= test_insert_end_remove_start ();
 
-	// return test_insert_end_remove_end ();
+	// res |= test_insert_end_remove_end ();
 
 	// res |= test_traverse ();
 
-	// return test_sort ();
+	// res |= test_sort ();
 
-	// return test_thread_safe ();
+	// res |= test_thread_safe ();
 
-	// return test_remove_at ();
+	// res |= test_remove_at ();
 
 	// res |= test_array ();
 
