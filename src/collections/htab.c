@@ -195,6 +195,33 @@ Htab *htab_create (size_t size,
 	
 // }
 
+// returns true if there is at least 1 data associated with the key
+// returns false if their is none
+bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
+
+	bool retval = false;
+
+	if (ht && key && key_size) {
+		size_t index = ht->hash (key, key_size, ht->size);
+		HtabNode *node = ht->table[index]->start;
+		while (node && node->key && node->val) {
+			if (node->key_size == key_size) {
+				if (!ht->compare (key, key_size, node->key, node->key_size)) {
+					retval = true;
+					break;
+				}
+
+				else node = node->next;
+			}
+
+			else node = node->next;
+		}
+	}
+
+	return retval;
+
+}
+
 // inserts a new value to the htab associated with its key
 // returns 0 on success, 1 on error
 int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t val_size) {
@@ -270,32 +297,6 @@ void *htab_get (Htab *ht, const void *key, size_t key_size) {
 	}
 
 	return retval;
-
-}
-
-bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
-
-	size_t index;
-	HtabNode *node = NULL;
-
-	if (!ht || !key || !ht->compare) return -1;
-
-	index = ht->hash(key, key_size, ht->size);
-	node = ht->table[index]->start;
-
-	while (node && node->key && node->val) {
-		if (node->key_size == key_size) {
-			if (!ht->compare(key, key_size, node->key, node->key_size)) {
-				return true;
-			}
-
-			else node = node->next;
-		}
-
-		else node = node->next;
-	}
-
-	return false;
 
 }
 

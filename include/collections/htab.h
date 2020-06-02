@@ -60,6 +60,10 @@ extern Htab *htab_create (
 	void (*delete_data)(void *data)
 );
 
+// returns true if there is at least 1 data associated with the key
+// returns false if their is none
+extern bool htab_contains_key (Htab *ht, const void *key, size_t key_size);
+
 // inserts a new value to the htab associated with its key
 // returns 0 on success, 1 on error
 extern int htab_insert (
