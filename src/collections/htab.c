@@ -247,65 +247,35 @@ int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t v
 }
 
 // returns a ptr to the data associated with the key
-void *htab_get_data (Htab *ht, const void *key, size_t key_size) {
+// returns NULL if no data was found
+void *htab_get (Htab *ht, const void *key, size_t key_size) {
+
+	void *retval = NULL;
 
 	if (ht) {
-		size_t index;
-		HtabNode *node = NULL;  
-
-		index = ht->hash(key, key_size, ht->size);
-		node = ht->table[index]->start;
-
+		size_t index = ht->hash (key, key_size, ht->size);
+		HtabNode *node = ht->table[index]->start;  
 		while (node && node->key && node->val) {
 			if (node->key_size == key_size) {
 				if (!ht->compare (key, key_size, node->key, node->key_size)) {
-					return node->val;
-					// ht->vcopy_f(val, node->val, node->val_size);
-					// *val_size = node->val_size;
-					// return 0;
+					retval = node->val;
+					break;
 				}
 
-				else node = node->next;
+				else {
+					node = node->next;
+				} 
 			}
 
-			else node = node->next;
+			else {
+				node = node->next;
+			}
 		}
 	}
 
-	return NULL;
+	return retval;
 
 }
-
-// int htab_get (Htab *ht, const void *key, size_t key_size, void **val, 
-// 	size_t *val_size) {
-
-// 	size_t index;
-// 	HtabNode *node = NULL;
-
-// 	if (!ht || !key || !ht->compare || !val || !val_size)
-// 		return -1;
-
-// 	index = ht->hash(key, key_size, ht->size);
-// 	node = ht->table[index]->start;
-
-// 	while (node && node->key && node->val) {
-// 		if (node->key_size == key_size) {
-// 			if (!ht->compare(key, key_size, node->key, node->key_size)) {
-// 				ht->vcopy_f(val, node->val, node->val_size);
-// 				*val_size = node->val_size;
-// 				return 0;
-// 			}
-
-// 			else node = node->next;
-// 		}
-
-// 		else node = node->next;
-// 	}
-
-// 	*val = NULL;
-// 	*val_size = 0;
-// 	return -1;
-// } 
 
 bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
 

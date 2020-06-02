@@ -69,7 +69,8 @@ extern int htab_insert (
 );
 
 // returns a ptr to the data associated with the key
-extern void *htab_get_data (Htab *ht, const void *key, size_t key_size);
+// returns NULL if no data was found
+extern void *htab_get (Htab *ht, const void *key, size_t key_size);
 
 // removes the data associated with the key from the htab
 extern void *htab_remove (Htab *ht, const void *key, size_t key_size);
@@ -79,8 +80,6 @@ extern bool htab_contains_key (Htab *ht, const void *key, size_t key_size);
 
 // destroys the htb and all of its data
 extern void htab_destroy (Htab *ht);
-
-// extern int htab_get (Htab *ht, const void *key, size_t ksz, void **val, size_t *vsz);
 
 extern void htab_print (Htab *htab);
 
