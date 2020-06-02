@@ -97,14 +97,19 @@ static HtabBucket *htab_bucket_new (void) {
 
 }
 
-static void htab_bucket_delete (void *bucket_ptr) {
+static void htab_bucket_delete (HtabBucket *bucket, void (*delete_data)(void *data)) {
 
-	if (bucket_ptr) {
-		HtabBucket *bucket = (HtabBucket *) bucket_ptr;
+	if (bucket) {
+		while (bucket->count) {
+			HtabNode *node = bucket->start;
+			bucket->start = bucket->start->next;
 
-		// FIXME: delete nodes
+			htab_node_delete (node, delete_data);
 
-		free (bucket_ptr);
+			bucket->count--;
+		}
+
+		free (bucket);
 	}
 
 }
@@ -335,59 +340,13 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 
 }
 
-int htab_cleanup (Htab *ht) {
-
-	if (ht) {
-		HtabNode *node = NULL;
-
-		if (!ht->table || !ht->size) return 1;
-
-		for (size_t i = 0; i < ht->size; ++i) {
-			if (ht->table[i]) {
-				node = ht->table[i]->start;
-				while (node) {
-					if (node->key) free (node->key);
-					if (node->val) free (node->val);
-
-					node = node->next;
-				}
-			}
-		}
-
-		return 0;
-	}
-
-	else return 1;
-
-}
-
-// FIXME: delet buckets
 void htab_destroy (Htab *ht) {
 
 	if (ht) {
 		if (ht->table) {
-			HtabNode *node = NULL;
 			for (size_t i = 0; i < ht->size; i++) {
 				if (ht->table[i]) {
-					node = ht->table[i]->start;
-					while (node) {
-						// if (ht->allow_copy) {
-							if (node->val) {
-								if (ht->delete_data) ht->delete_data (node->val);
-								// else free (node->val);
-								// else if (ht->allow_copy) free (node->val);
-							}
-						// }
-
-						if (node->key) free (node->key);
-
-						node->key = NULL;
-						node->val = NULL;
-
-						node = node->next;
-					}
-
-					free (node);
+					htab_bucket_delete (ht->table[i], ht->delete_data);
 				}
 			}
 		}

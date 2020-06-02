@@ -79,12 +79,10 @@ extern void *htab_get (Htab *ht, const void *key, size_t key_size);
 // removes the data associated with the key from the htab
 extern void *htab_remove (Htab *ht, const void *key, size_t key_size);
 
-// checks if the htab containes the matching value for the key
-extern bool htab_contains_key (Htab *ht, const void *key, size_t key_size);
-
 // destroys the htb and all of its data
 extern void htab_destroy (Htab *ht);
 
+// prints the htab - buckets - nodes
 extern void htab_print (Htab *htab);
 
 #endif

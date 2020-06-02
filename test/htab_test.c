@@ -68,6 +68,8 @@ int main (void) {
         }
     }
 
+    htab_destroy (map);
+
     printf ("\nDone!\n");
 
     return 0;
