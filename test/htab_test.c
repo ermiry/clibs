@@ -26,6 +26,8 @@ static inline void data_print (Data *data) {
 
 int test_int_insert (void) {
 
+    printf ("\ntest_int_insert\n");
+
     Htab *map = htab_create (
         HTAB_DEFAULT_INIT_SIZE,
         NULL,
@@ -59,6 +61,8 @@ int test_int_insert (void) {
 }
 
 int test_int_remove (void) {
+
+    printf ("\ntest_int_remove\n");
 
     int n_elements = 100;
 
@@ -112,6 +116,8 @@ int test_int_remove (void) {
 
 int test_int_get (void) {
 
+    printf ("\ntest_int_get\n");
+
     int n_elements = 100;
 
     Htab *map = htab_create (
@@ -163,6 +169,54 @@ int test_int_get (void) {
 
 }
 
+int test_int_contains (void) {
+
+    printf ("\ntest_int_contains\n");
+
+    int n_elements = 100;
+
+    Htab *map = htab_create (
+        HTAB_DEFAULT_INIT_SIZE,
+        NULL,
+        NULL,
+        data_delete
+    );
+
+    int value = 1000;
+    for (unsigned int i = 0; i < n_elements; i++) {
+        const void *key = &i;
+
+        Data *data = (Data *) malloc (sizeof (Data));
+        data->idx = i;
+        // data->value = rand () % 99 + 1;
+        data->value = value;
+        value++;
+
+        htab_insert (
+            map, 
+            key, sizeof (int), 
+            data, sizeof (Data)
+        );
+    }
+
+    printf ("\nItems in map after insert: %ld / %d\n", map->count, n_elements);
+
+     for (unsigned int i = 0; i < n_elements; i++) {
+        int key_int = rand () % ((n_elements * 2) - 1) + 1;;
+        const void *key = &key_int;
+
+        if (!htab_contains_key (map, key, sizeof (int))) {
+            if (key_int > n_elements) printf ("[OKAY]: no data for key: %d\n", key_int);
+            else printf ("[ERROR]: NO DATA FOR KEY: %d\n", key_int);
+        }
+    }
+
+    htab_destroy (map);
+
+    return 0;
+
+}
+
 int main (void) {
 
     srand ((unsigned) time (NULL));
@@ -174,6 +228,8 @@ int main (void) {
     errors |= test_int_remove ();
 
     errors |= test_int_get ();
+
+    errors |= test_int_contains ();
 
     printf ("\nDone!\n");
 

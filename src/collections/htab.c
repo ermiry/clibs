@@ -176,6 +176,13 @@ Htab *htab_create (size_t size,
 
 }
 
+// returns the current number of elements inside the htab
+size_t htab_size (Htab *ht) {
+
+	return ht ? ht->count : 0;
+
+}
+
 // returns true if there is at least 1 data associated with the key
 // returns false if their is none
 bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {

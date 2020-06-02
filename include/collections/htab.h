@@ -54,6 +54,9 @@ extern Htab *htab_create (
 	void (*delete_data)(void *data)
 );
 
+// returns the current number of elements inside the htab
+extern size_t htab_size (Htab *ht);
+
 // returns true if there is at least 1 data associated with the key
 // returns false if their is none
 extern bool htab_contains_key (Htab *ht, const void *key, size_t key_size);
