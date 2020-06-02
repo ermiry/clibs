@@ -28,10 +28,15 @@ int main (void) {
 
     srand ((unsigned) time (NULL));
 
-    Htab *map = htab_init (50, NULL, NULL, NULL, false, NULL, NULL);
+    Htab *map = htab_create (
+        HTAB_DEFAULT_INIT_SIZE,
+        NULL,
+        NULL,
+        NULL
+    );
 
     int value = 1000;
-    for (unsigned int i = 0; i < 50; i++) {
+    for (unsigned int i = 0; i < 100; i++) {
         const void *key = &i;
 
         Data *data = (Data *) malloc (sizeof (Data));

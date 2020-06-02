@@ -5,11 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define HTAB_INIT_SIZE      7
-
-typedef size_t (*Hash)(const void *key, size_t key_size, size_t table_size);
-typedef int (*Compare)(const void *k1, size_t s1, const void *k2, size_t s2);
-typedef int (*Copy)(void **dst, const void *src, size_t sz);
+#define HTAB_DEFAULT_INIT_SIZE				32
 
 typedef struct HtabNode {
 
@@ -30,17 +26,19 @@ typedef struct HtabBucket {
 
 typedef struct Htab {
 
-	HtabNode **table;
+	HtabBucket **table;
+
 	size_t size;
 	size_t count;
 
-	Hash hash_f;
-	Compare compare_f;
-	Copy kcopy_f;
+	size_t (*hash)(const void *key, size_t key_size, size_t table_size);
+	int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2);
 
-	bool allow_copy;
-	Copy vcopy_f;
-	void (*destroy)(void *data);
+	// TODO: allow for key value copy
+	// int (*copy)(void **dst, const void *src, size_t sz);
+
+	// method to delete the data
+	void (*delete_data)(void *data);
 
 } Htab;
 
@@ -52,8 +50,13 @@ typedef struct Htab {
 // allow_copy --> select if you want to create a new copy of the values
 // vcopy_f --> ptr to a custom function to copy values into the htab (generate a new copy), NULL to use the same value
 // destroy --> custom function to destroy copied values
-extern Htab *htab_init (unsigned int size, Hash hash_f, Compare compare_f, Copy kcopy_f, 
-	bool allow_copy, Copy vcopy_f, void (*destroy)(void *data));
+// extern Htab *htab_init (unsigned int size, Hash hash_f, Compare compare_f, Copy kcopy_f, 
+// 	bool allow_copy, Copy vcopy_f, void (*destroy)(void *data));
+
+extern Htab *htab_create (size_t size,
+	size_t (*hash)(const void *key, size_t key_size, size_t table_size),
+	int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2),
+	void (*delete_data)(void *data));
 
 // inserts a new value to the htab associated with its key
 extern int htab_insert (Htab *ht, const void *key, size_t key_size, 

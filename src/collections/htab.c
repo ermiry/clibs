@@ -105,28 +105,19 @@ static void htab_delete (Htab *htab) {
 
 }
 
-static Htab *htab_new (unsigned int size) {
+static Htab *htab_new (void) {
 
 	Htab *htab = (Htab *) malloc (sizeof (Htab));
 	if (htab) {
-		memset (htab, 0, sizeof (Htab));
 		htab->table = NULL;
-		htab->hash_f = NULL;
-		htab->compare_f = NULL;
-		htab->kcopy_f = NULL;
-		htab->vcopy_f = NULL;
+		
+		htab->size = 0;
+		htab->count = 0;
 
-		htab->size = HTAB_INIT_SIZE;
+		htab->hash = NULL;
+		htab->compare = NULL;
 
-		htab->table = (HtabNode **) calloc (htab->size, sizeof (HtabNode *));
-		if (htab->table) {
-			for (size_t i = 0; i < htab->size; ++i) htab->table[i] = NULL;
-		}
-
-		else {
-			htab_delete (htab);
-			htab = NULL;
-		}
+		htab->delete_data = NULL;
 	}
 
 	return htab;
@@ -134,6 +125,33 @@ static Htab *htab_new (unsigned int size) {
 }
 
 #pragma endregion
+
+Htab *htab_create (size_t size,
+	size_t (*hash)(const void *key, size_t key_size, size_t table_size),
+	int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2),
+	void (*delete_data)(void *data)) {
+
+	Htab *htab = htab_new ();
+	if (htab) {
+		if (size > 0) {
+			htab->size = size;
+			
+			htab->table = (HtabBucket **) calloc (htab->size, sizeof (HtabBucket));
+			if (htab->table) {
+				for (size_t i = 0; i < htab->size; i++)
+					htab->table[i] = htab_bucket_new ();
+
+				htab->hash = hash ? hash : htab_generic_hash;
+				htab->compare = compare ? compare : htab_generic_compare;
+
+				htab->delete_data = delete_data;
+			}
+		}
+	}
+
+	return htab;
+
+}
 
 // creates a new htab
 // size --> initial htab nodes size
@@ -143,44 +161,46 @@ static Htab *htab_new (unsigned int size) {
 // allow_copy --> select if you want to create a new copy of the values
 // vcopy_f --> ptr to a custom function to copy values into the htab (generate a new copy)
 // destroy --> custom function to destroy copied values or delete values when calling hatb_destroy
-Htab *htab_init (unsigned int size, Hash hash_f, Compare compare_f, Copy kcopy_f, 
-	bool allow_copy, Copy vcopy_f, void (*destroy)(void *data)) {
+// Htab *htab_init (unsigned int size, Hash hash_f, Compare compare_f, Copy kcopy_f, 
+// 	bool allow_copy, Copy vcopy_f, void (*destroy)(void *data)) {
 
-	Htab *ht = htab_new (size);
+// 	Htab *ht = htab_new (size);
 
-	if (ht) {
-		ht->hash_f = hash_f ? hash_f : htab_generic_hash;
-		ht->compare_f = compare_f ? compare_f : htab_generic_compare;
-		ht->kcopy_f = kcopy_f ? kcopy_f : htab_generic_copy;
+// 	if (ht) {
+// 		ht->hash_f = hash_f ? hash_f : htab_generic_hash;
+// 		ht->compare_f = compare_f ? compare_f : htab_generic_compare;
+// 		ht->kcopy_f = kcopy_f ? kcopy_f : htab_generic_copy;
 
-		ht->allow_copy = allow_copy;
-		ht->vcopy_f = vcopy_f ? vcopy_f : htab_generic_copy;
-		ht->destroy = destroy;
+// 		ht->allow_copy = allow_copy;
+// 		ht->vcopy_f = vcopy_f ? vcopy_f : htab_generic_copy;
+// 		ht->destroy = destroy;
 
-		ht->count = 0;
-	}
+// 		ht->count = 0;
+// 	}
 	
-	return ht;
+// 	return ht;
 	
-}
+// }
 
 // inserts a new value to the htab associated with its key
 int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t val_size) {
 
 	size_t index;
-	HtabNode *node = NULL;
 	
-	if (!ht || !ht->hash_f || !key || !key_size || !val || !val_size || !ht->compare_f)
+	if (!ht || !ht->hash || !key || !key_size || !val || !val_size || !ht->compare)
 		return 1;
 
-	index = ht->hash_f (key, key_size, ht->size);
-	node = ht->table[index];
+	index = ht->hash (key, key_size, ht->size);
+	printf ("idx: %ld\n", index);
+	// node = ht->table[index];
+	HtabBucket *bucket = ht->table[index];
+	HtabNode *node = bucket->start;
 
 	if (node) {
-		while (node->next && ht->compare_f (key, key_size, node->key, node->key_size))
+		while (node->next && ht->compare (key, key_size, node->key, node->key_size))
 			node = node->next;
 
-		if (ht->compare_f (key, key_size, node->key, node->key_size)) {
+		if (ht->compare (key, key_size, node->key, node->key_size)) {
 			node->next = htab_node_new ();
 			if (!node->next) return 1;
 			node = node->next;
@@ -190,24 +210,27 @@ int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t v
 	else {
 		node = htab_node_new ();
 		if (!node) return 1;
-		ht->table[index] = node;
+		ht->table[index]->start = node;
 	}
 	
 	node->key_size = key_size;
 	node->val_size = val_size;
 	node->key = malloc (node->key_size);
 	if (!node->key) return 1;
-	ht->kcopy_f (&node->key, key, node->key_size);
 
-	if (ht->allow_copy) {
-		node->val = malloc (node->val_size);
-		ht->vcopy_f (&node->val, val, node->val_size);
-	}
+	// FIXME:
+	// ht->kcopy_f (&node->key, key, node->key_size);
+	htab_generic_copy (&node->key, key, node->key_size);
 
-	// jsut point to the data
-	else {
+	// if (ht->allow_copy) {
+	// 	node->val = malloc (node->val_size);
+	// 	ht->vcopy_f (&node->val, val, node->val_size);
+	// }
+
+	// just point to the data
+	// else {
 		node->val = val;
-	}
+	// }
 	
 	++ht->count;
 
@@ -222,12 +245,12 @@ void *htab_get_data (Htab *ht, const void *key, size_t key_size) {
 		size_t index;
 		HtabNode *node = NULL;  
 
-		index = ht->hash_f(key, key_size, ht->size);
-		node = ht->table[index];
+		index = ht->hash(key, key_size, ht->size);
+		node = ht->table[index]->start;
 
 		while (node && node->key && node->val) {
 			if (node->key_size == key_size) {
-				if (!ht->compare_f (key, key_size, node->key, node->key_size)) {
+				if (!ht->compare (key, key_size, node->key, node->key_size)) {
 					return node->val;
 					// ht->vcopy_f(val, node->val, node->val_size);
 					// *val_size = node->val_size;
@@ -245,50 +268,50 @@ void *htab_get_data (Htab *ht, const void *key, size_t key_size) {
 
 }
 
-int htab_get (Htab *ht, const void *key, size_t key_size, void **val, 
-	size_t *val_size) {
+// int htab_get (Htab *ht, const void *key, size_t key_size, void **val, 
+// 	size_t *val_size) {
 
-	size_t index;
-	HtabNode *node = NULL;
+// 	size_t index;
+// 	HtabNode *node = NULL;
 
-	if (!ht || !key || !ht->compare_f || !val || !val_size)
-		return -1;
+// 	if (!ht || !key || !ht->compare || !val || !val_size)
+// 		return -1;
 
-	index = ht->hash_f(key, key_size, ht->size);
-	node = ht->table[index];
+// 	index = ht->hash(key, key_size, ht->size);
+// 	node = ht->table[index]->start;
 
-	while (node && node->key && node->val) {
-		if (node->key_size == key_size) {
-			if (!ht->compare_f(key, key_size, node->key, node->key_size)) {
-				ht->vcopy_f(val, node->val, node->val_size);
-				*val_size = node->val_size;
-				return 0;
-			}
+// 	while (node && node->key && node->val) {
+// 		if (node->key_size == key_size) {
+// 			if (!ht->compare(key, key_size, node->key, node->key_size)) {
+// 				ht->vcopy_f(val, node->val, node->val_size);
+// 				*val_size = node->val_size;
+// 				return 0;
+// 			}
 
-			else node = node->next;
-		}
+// 			else node = node->next;
+// 		}
 
-		else node = node->next;
-	}
+// 		else node = node->next;
+// 	}
 
-	*val = NULL;
-	*val_size = 0;
-	return -1;
-} 
+// 	*val = NULL;
+// 	*val_size = 0;
+// 	return -1;
+// } 
 
 bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
 
 	size_t index;
 	HtabNode *node = NULL;
 
-	if (!ht || !key || !ht->compare_f) return -1;
+	if (!ht || !key || !ht->compare) return -1;
 
-	index = ht->hash_f(key, key_size, ht->size);
-	node = ht->table[index];
+	index = ht->hash(key, key_size, ht->size);
+	node = ht->table[index]->start;
 
 	while (node && node->key && node->val) {
 		if (node->key_size == key_size) {
-			if (!ht->compare_f(key, key_size, node->key, node->key_size)) {
+			if (!ht->compare(key, key_size, node->key, node->key_size)) {
 				return true;
 			}
 
@@ -310,18 +333,19 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 	size_t index;
 	HtabNode *node = NULL, *prev = NULL;
 
-	if (ht && key && ht->compare_f) {
-		index = ht->hash_f (key, key_size, ht->size);
-		node = ht->table[index];
+	if (ht && key && ht->compare) {
+		index = ht->hash (key, key_size, ht->size);
+		node = ht->table[index]->start;
 		prev = NULL;
 		while (node) {
-			if (!ht->compare_f (key, key_size, node->key, node->key_size)) {
-				if (!prev) ht->table[index] = ht->table[index]->next;
+			if (!ht->compare (key, key_size, node->key, node->key_size)) {
+				if (!prev) ht->table[index]->start = ht->table[index]->start->next;
 				else prev->next = node->next;
 
 				retval = node->val;
 
-				htab_node_delete (node, ht->allow_copy, ht->destroy);
+				// FIXME:
+				// htab_node_delete (node, ht->allow_copy, ht->destroy);
 				ht->count--;
 			}
 			prev = node;
@@ -342,7 +366,7 @@ int htab_cleanup (Htab *ht) {
 
 		for (size_t i = 0; i < ht->size; ++i) {
 			if (ht->table[i]) {
-				node = ht->table[i];
+				node = ht->table[i]->start;
 				while (node) {
 					if (node->key) free (node->key);
 					if (node->val) free (node->val);
@@ -359,6 +383,7 @@ int htab_cleanup (Htab *ht) {
 
 }
 
+// FIXME: delet buckets
 void htab_destroy (Htab *ht) {
 
 	if (ht) {
@@ -366,13 +391,13 @@ void htab_destroy (Htab *ht) {
 			HtabNode *node = NULL;
 			for (size_t i = 0; i < ht->size; i++) {
 				if (ht->table[i]) {
-					node = ht->table[i];
+					node = ht->table[i]->start;
 					while (node) {
 						// if (ht->allow_copy) {
 							if (node->val) {
-								if (ht->destroy) ht->destroy (node->val);
+								if (ht->delete_data) ht->delete_data (node->val);
 								// else free (node->val);
-								else if (ht->allow_copy) free (node->val);
+								// else if (ht->allow_copy) free (node->val);
 							}
 						// }
 
@@ -423,7 +448,7 @@ void htab_print (Htab *htab) {
 		printf ("Htab's count: %ld\n", htab->count);
 
 		for (size_t idx = 0; idx < htab->size; idx++) {
-			htab_node_print (htab->table[idx], idx);
+			htab_node_print (htab->table[idx]->start, idx);
 		}
 
 		printf ("\n\n");
