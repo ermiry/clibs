@@ -71,16 +71,12 @@ static HtabNode *htab_node_create (const void *key, size_t key_size, void *val, 
 
 }
 
-static void htab_node_delete (HtabNode *node, bool allow_copy, void (*destroy)(void *data)) {
+static void htab_node_delete (HtabNode *node, void (*delete_data)(void *data)) {
 
 	if (node) {
-		// if (allow_copy) {
-			if (node->val) {
-				if (destroy) destroy (node->val);
-				// else free (node->val);
-				else if (allow_copy) free (node->val);
-			}
-		// }
+		if (node->val) {
+			if (delete_data) delete_data (node->val);
+		}
 
 		if (node->key) free (node->key);
 
@@ -304,17 +300,16 @@ bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
 }
 
 // removes the data associated with the key from the htab
+// returns NULL if no data was found with the provided key
 void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 
 	void *retval = NULL;
 
-	size_t index;
-	HtabNode *node = NULL, *prev = NULL;
-
-	if (ht && key && ht->compare) {
-		index = ht->hash (key, key_size, ht->size);
-		node = ht->table[index]->start;
-		prev = NULL;
+	if (ht && key && ht->hash && ht->compare) {
+		size_t index = ht->hash (key, key_size, ht->size);
+		HtabBucket *bucket = ht->table[index];
+		HtabNode *node = bucket->start;
+		HtabNode *prev = NULL;
 		while (node) {
 			if (!ht->compare (key, key_size, node->key, node->key_size)) {
 				if (!prev) ht->table[index]->start = ht->table[index]->start->next;
@@ -322,10 +317,14 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 
 				retval = node->val;
 
-				// FIXME:
-				// htab_node_delete (node, ht->allow_copy, ht->destroy);
+				htab_node_delete (node, ht->delete_data);
+
+				bucket->count--;
 				ht->count--;
+
+				break;
 			}
+
 			prev = node;
 			node = node->next;
 		}
