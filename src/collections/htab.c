@@ -54,6 +54,23 @@ static HtabNode *htab_node_new (void) {
 
 }
 
+static HtabNode *htab_node_create (const void *key, size_t key_size, void *val, size_t val_size) {
+
+	HtabNode *node = htab_node_new ();
+	if (node) {
+		// TODO: option for custom key copy
+		node->key_size = key_size;
+		node->key = malloc (node->key_size);
+		htab_generic_copy (&node->key, key, node->key_size);
+
+		node->val = val;
+		node->val_size = val_size;
+	}
+
+	return node;
+
+}
+
 static void htab_node_delete (HtabNode *node, bool allow_copy, void (*destroy)(void *data)) {
 
 	if (node) {
@@ -77,7 +94,7 @@ static HtabBucket *htab_bucket_new (void) {
 	HtabBucket *bucket = (HtabBucket *) malloc (sizeof (HtabBucket));
 	if (bucket) {
 		bucket->start = NULL;
-		bucket->size = 0;
+		bucket->count = 0;
 	}
 
 	return bucket;
@@ -183,58 +200,49 @@ Htab *htab_create (size_t size,
 // }
 
 // inserts a new value to the htab associated with its key
+// returns 0 on success, 1 on error
 int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t val_size) {
 
-	size_t index;
-	
-	if (!ht || !ht->hash || !key || !key_size || !val || !val_size || !ht->compare)
-		return 1;
+	int retval = 1;
 
-	index = ht->hash (key, key_size, ht->size);
-	printf ("idx: %ld\n", index);
-	// node = ht->table[index];
-	HtabBucket *bucket = ht->table[index];
-	HtabNode *node = bucket->start;
+	if (ht && ht->hash && ht->compare && key && key_size && val && val_size) {
+		size_t index = ht->hash (key, key_size, ht->size);
+		// printf ("size: %ld\n", ht->size);
+		// printf ("index: %ld\n", index);
 
-	if (node) {
-		while (node->next && ht->compare (key, key_size, node->key, node->key_size))
-			node = node->next;
+		HtabBucket *bucket = ht->table[index];
+		HtabNode *node = bucket->start;
+		if (node) {
+			while (node->next && ht->compare (key, key_size, node->key, node->key_size))
+				node = node->next;
 
-		if (ht->compare (key, key_size, node->key, node->key_size)) {
-			node->next = htab_node_new ();
-			if (!node->next) return 1;
-			node = node->next;
+			if (ht->compare (key, key_size, node->key, node->key_size)) {
+				node->next = htab_node_create (key, key_size, val, val_size);
+				if (node->next) {
+					node = node->next;
+
+					bucket->count += 1;
+					ht->count += 1;
+
+					retval = 0;
+				}
+			}
+		}
+
+		else {
+			node = htab_node_create (key, key_size, val, val_size);
+			if (node) {
+				bucket->start = node;
+
+				bucket->count += 1;
+				ht->count += 1;
+
+				retval = 0;
+			}
 		}
 	}
 
-	else {
-		node = htab_node_new ();
-		if (!node) return 1;
-		ht->table[index]->start = node;
-	}
-	
-	node->key_size = key_size;
-	node->val_size = val_size;
-	node->key = malloc (node->key_size);
-	if (!node->key) return 1;
-
-	// FIXME:
-	// ht->kcopy_f (&node->key, key, node->key_size);
-	htab_generic_copy (&node->key, key, node->key_size);
-
-	// if (ht->allow_copy) {
-	// 	node->val = malloc (node->val_size);
-	// 	ht->vcopy_f (&node->val, val, node->val_size);
-	// }
-
-	// just point to the data
-	// else {
-		node->val = val;
-	// }
-	
-	++ht->count;
-
-	return 0;
+	return retval;
 
 }
 

@@ -20,7 +20,7 @@ typedef struct HtabNode {
 typedef struct HtabBucket {
 
 	struct HtabNode *start;
-	size_t size;
+	size_t count;
 
 } HtabBucket;
 
@@ -53,14 +53,20 @@ typedef struct Htab {
 // extern Htab *htab_init (unsigned int size, Hash hash_f, Compare compare_f, Copy kcopy_f, 
 // 	bool allow_copy, Copy vcopy_f, void (*destroy)(void *data));
 
-extern Htab *htab_create (size_t size,
+extern Htab *htab_create (
+	size_t size,
 	size_t (*hash)(const void *key, size_t key_size, size_t table_size),
 	int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2),
-	void (*delete_data)(void *data));
+	void (*delete_data)(void *data)
+);
 
 // inserts a new value to the htab associated with its key
-extern int htab_insert (Htab *ht, const void *key, size_t key_size, 
-	void *val, size_t val_size);
+// returns 0 on success, 1 on error
+extern int htab_insert (
+	Htab *ht, 
+	const void *key, size_t key_size, 
+	void *val, size_t val_size
+);
 
 // returns a ptr to the data associated with the key
 extern void *htab_get_data (Htab *ht, const void *key, size_t key_size);
