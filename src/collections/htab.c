@@ -299,7 +299,7 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 
 				retval = node->val;
 
-				htab_node_delete (node, ht->delete_data);
+				htab_node_delete (node, NULL);
 
 				bucket->count--;
 				ht->count--;
