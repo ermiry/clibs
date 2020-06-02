@@ -21,6 +21,13 @@ typedef struct HtabNode {
 
 } HtabNode;
 
+typedef struct HtabBucket {
+
+	struct HtabNode *start;
+	size_t size;
+
+} HtabBucket;
+
 typedef struct Htab {
 
 	HtabNode **table;

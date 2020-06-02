@@ -37,7 +37,7 @@ static int htab_generic_copy (void **dst, const void *src, size_t sz) {
 	return 0;
 }
 
-/*** htab nodes ***/
+#pragma region internal
 
 static HtabNode *htab_node_new (void) {
 
@@ -72,7 +72,29 @@ static void htab_node_delete (HtabNode *node, bool allow_copy, void (*destroy)(v
 
 }
 
-/*** Htab ***/
+static HtabBucket *htab_bucket_new (void) {
+
+	HtabBucket *bucket = (HtabBucket *) malloc (sizeof (HtabBucket));
+	if (bucket) {
+		bucket->start = NULL;
+		bucket->size = 0;
+	}
+
+	return bucket;
+
+}
+
+static void htab_bucket_delete (void *bucket_ptr) {
+
+	if (bucket_ptr) {
+		HtabBucket *bucket = (HtabBucket *) bucket_ptr;
+
+		// FIXME: delete nodes
+
+		free (bucket_ptr);
+	}
+
+}
 
 static void htab_delete (Htab *htab) {
 
@@ -110,6 +132,8 @@ static Htab *htab_new (unsigned int size) {
 	return htab;
 
 }
+
+#pragma endregion
 
 // creates a new htab
 // size --> initial htab nodes size
