@@ -32,7 +32,7 @@ int main (void) {
         HTAB_DEFAULT_INIT_SIZE,
         NULL,
         NULL,
-        NULL
+        data_delete
     );
 
     int value = 1000;
@@ -57,10 +57,10 @@ int main (void) {
     for (unsigned int i = 0; i < 50; i++) {
         const void *key = &i;
 
-        Data *data = (Data *) htab_remove (map, key, sizeof (int));
+        Data *data = (Data *) htab_get (map, key, sizeof (int));
         if (data) {
             data_print (data);
-            data_delete (data);
+            // data_delete (data);
         }
 
         else {

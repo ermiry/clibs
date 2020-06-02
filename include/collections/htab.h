@@ -43,16 +43,10 @@ typedef struct Htab {
 } Htab;
 
 // creates a new htab
-// size --> initial htab nodes size, the default is 7
-// hash_f --> ptr to a custom hash function, NULL to use default
-// compare_f -> ptr to a custom value compare function, NULL to use default
-// kcopy_f --> ptr to a custom function to copy keys into the htab (generate a new copy), NULL to us ethe same key
-// allow_copy --> select if you want to create a new copy of the values
-// vcopy_f --> ptr to a custom function to copy values into the htab (generate a new copy), NULL to use the same value
-// destroy --> custom function to destroy copied values
-// extern Htab *htab_init (unsigned int size, Hash hash_f, Compare compare_f, Copy kcopy_f, 
-// 	bool allow_copy, Copy vcopy_f, void (*destroy)(void *data));
-
+// size - how many buckets do you want - more buckets = less collisions
+// hash - custom method to hash the key for insertion
+// compare - custom method to compare keys
+// delete_data - custom method to delete your data, NULL for no delete when htab gets destroyed
 extern Htab *htab_create (
 	size_t size,
 	size_t (*hash)(const void *key, size_t key_size, size_t table_size),
@@ -83,6 +77,8 @@ extern void *htab_remove (Htab *ht, const void *key, size_t key_size);
 extern void htab_destroy (Htab *ht);
 
 // prints the htab - buckets - nodes
+// currently only works if both keys and values are int
+// used for debugging and testing
 extern void htab_print (Htab *htab);
 
 #endif

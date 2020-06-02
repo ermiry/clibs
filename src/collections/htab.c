@@ -144,6 +144,11 @@ static Htab *htab_new (void) {
 
 #pragma endregion
 
+// creates a new htab
+// size - how many buckets do you want - more buckets = less collisions
+// hash - custom method to hash the key for insertion
+// compare - custom method to compare keys
+// delete_data - custom method to delete your data, NULL for no delete when htab gets destroyed
 Htab *htab_create (size_t size,
 	size_t (*hash)(const void *key, size_t key_size, size_t table_size),
 	int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2),
@@ -170,35 +175,6 @@ Htab *htab_create (size_t size,
 	return htab;
 
 }
-
-// creates a new htab
-// size --> initial htab nodes size
-// hash_f --> ptr to a custom hash function
-// compare_f -> ptr to a custom value compare function
-// kcopy_f --> ptr to a custom function to copy keys into the htab (generate a new copy)
-// allow_copy --> select if you want to create a new copy of the values
-// vcopy_f --> ptr to a custom function to copy values into the htab (generate a new copy)
-// destroy --> custom function to destroy copied values or delete values when calling hatb_destroy
-// Htab *htab_init (unsigned int size, Hash hash_f, Compare compare_f, Copy kcopy_f, 
-// 	bool allow_copy, Copy vcopy_f, void (*destroy)(void *data)) {
-
-// 	Htab *ht = htab_new (size);
-
-// 	if (ht) {
-// 		ht->hash_f = hash_f ? hash_f : htab_generic_hash;
-// 		ht->compare_f = compare_f ? compare_f : htab_generic_compare;
-// 		ht->kcopy_f = kcopy_f ? kcopy_f : htab_generic_copy;
-
-// 		ht->allow_copy = allow_copy;
-// 		ht->vcopy_f = vcopy_f ? vcopy_f : htab_generic_copy;
-// 		ht->destroy = destroy;
-
-// 		ht->count = 0;
-// 	}
-	
-// 	return ht;
-	
-// }
 
 // returns true if there is at least 1 data associated with the key
 // returns false if their is none
@@ -356,22 +332,25 @@ void htab_destroy (Htab *ht) {
 
 }
 
-static void htab_node_print (HtabNode *node, size_t idx) {
+static void htab_node_print (HtabNode *node) {
 
 	if (node) {
-		if (node->key) {
-			int *int_key = (int *) node->key;
-			int *int_value = (int *) node->val;
-			printf ("Node: %ld - Key %d - Value: %d\n", idx, *int_key, *int_value);
+		int *int_key = (int *) node->key;
+		int *int_value = (int *) node->val;
+		printf ("\tKey %d - Value: %d\n", *int_key, *int_value);
+	}
 
-			HtabNode *n = node->next;
-			while (n) {
-				int *int_key = (int *) n->key;
-				int *int_value = (int *) n->val;
-				printf ("Node: %ld - Key %d - Value: %d\n", idx, *int_key, *int_value);
-				
-				n = n->next;
-			}
+}
+
+static void htab_bucket_print (HtabBucket *bucket, size_t idx) {
+
+	if (bucket) {
+		printf ("Bucket <%ld> count: %ld\n", idx, bucket->count);
+		HtabNode *n = bucket->start;
+		while (n) {
+			htab_node_print (n);
+			
+			n = n->next;
 		}
 	}
 
@@ -385,7 +364,7 @@ void htab_print (Htab *htab) {
 		printf ("Htab's count: %ld\n", htab->count);
 
 		for (size_t idx = 0; idx < htab->size; idx++) {
-			htab_node_print (htab->table[idx]->start, idx);
+			htab_bucket_print (htab->table[idx], idx);
 		}
 
 		printf ("\n\n");
