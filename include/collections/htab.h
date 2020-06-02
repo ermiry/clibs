@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <pthread.h>
+
 #define HTAB_DEFAULT_INIT_SIZE				32
 
 typedef struct HtabNode {
@@ -40,6 +42,8 @@ typedef struct Htab {
 	// method to delete the data
 	void (*delete_data)(void *data);
 
+	pthread_mutex_t *mutex;
+
 } Htab;
 
 // creates a new htab
@@ -55,7 +59,13 @@ extern Htab *htab_create (
 );
 
 // returns the current number of elements inside the htab
-extern size_t htab_size (Htab *ht);
+extern size_t htab_size (Htab *htab);
+
+// returns true if its empty (size == 0)
+extern bool htab_is_empty (Htab *htab);
+
+// returns true if its NOT empty (size > 0)
+extern bool htab_is_not_empty (Htab *htab);
 
 // returns true if there is at least 1 data associated with the key
 // returns false if their is none

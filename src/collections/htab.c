@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include <pthread.h>
+
 #include "../../include/collections/htab.h"
 
 static size_t htab_generic_hash (const void *key, size_t key_size, size_t table_size) {
@@ -169,6 +171,9 @@ Htab *htab_create (size_t size,
 
 				htab->delete_data = delete_data;
 			}
+
+			htab->mutex = (pthread_mutex_t *) malloc (sizeof (pthread_mutex_t));
+			pthread_mutex_init (htab->mutex, NULL);
 		}
 	}
 
@@ -177,9 +182,53 @@ Htab *htab_create (size_t size,
 }
 
 // returns the current number of elements inside the htab
-size_t htab_size (Htab *ht) {
+size_t htab_size (Htab *htab) {
 
-	return ht ? ht->count : 0;
+	size_t retval = 0;
+
+	if (htab) {
+		pthread_mutex_lock (htab->mutex);
+
+		retval = htab->count;
+
+		pthread_mutex_unlock (htab->mutex);
+	}
+
+	return retval;
+
+}
+
+// returns true if its empty (size == 0)
+bool htab_is_empty (Htab *htab) { 
+	
+	bool retval = true;
+
+	if (htab) {
+		pthread_mutex_lock (htab->mutex);
+
+		retval = (htab->count == 0);
+
+		pthread_mutex_unlock (htab->mutex);
+	}
+
+	return retval;
+	
+}
+
+// returns true if its NOT empty (size > 0)
+bool htab_is_not_empty (Htab *htab) {
+
+	bool retval = false;
+
+	if (htab) {
+		pthread_mutex_lock (htab->mutex);
+
+		retval = (htab->count > 0);
+
+		pthread_mutex_unlock (htab->mutex);
+	}
+
+	return retval;
 
 }
 
@@ -190,7 +239,10 @@ bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
 	bool retval = false;
 
 	if (ht && key && key_size) {
+		pthread_mutex_lock (ht->mutex);
+
 		size_t index = ht->hash (key, key_size, ht->size);
+
 		HtabNode *node = ht->table[index]->start;
 		while (node && node->key && node->val) {
 			if (node->key_size == key_size) {
@@ -204,6 +256,8 @@ bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
 
 			else node = node->next;
 		}
+
+		pthread_mutex_unlock (ht->mutex);
 	}
 
 	return retval;
@@ -217,6 +271,8 @@ int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t v
 	int retval = 1;
 
 	if (ht && ht->hash && ht->compare && key && key_size && val && val_size) {
+		pthread_mutex_lock (ht->mutex);
+
 		size_t index = ht->hash (key, key_size, ht->size);
 		// printf ("size: %ld\n", ht->size);
 		// printf ("index: %ld\n", index);
@@ -251,6 +307,8 @@ int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t v
 				retval = 0;
 			}
 		}
+
+		pthread_mutex_unlock (ht->mutex);
 	}
 
 	return retval;
@@ -264,6 +322,8 @@ void *htab_get (Htab *ht, const void *key, size_t key_size) {
 	void *retval = NULL;
 
 	if (ht) {
+		pthread_mutex_lock (ht->mutex);
+
 		size_t index = ht->hash (key, key_size, ht->size);
 		HtabNode *node = ht->table[index]->start;  
 		while (node && node->key && node->val) {
@@ -282,6 +342,8 @@ void *htab_get (Htab *ht, const void *key, size_t key_size) {
 				node = node->next;
 			}
 		}
+
+		pthread_mutex_unlock (ht->mutex);
 	}
 
 	return retval;
@@ -295,6 +357,8 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 	void *retval = NULL;
 
 	if (ht && key && ht->hash && ht->compare) {
+		pthread_mutex_lock (ht->mutex);
+
 		size_t index = ht->hash (key, key_size, ht->size);
 		HtabBucket *bucket = ht->table[index];
 		HtabNode *node = bucket->start;
@@ -317,6 +381,8 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 			prev = node;
 			node = node->next;
 		}
+
+		pthread_mutex_unlock (ht->mutex);
 	}
 
 	return retval;
@@ -326,6 +392,8 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 void htab_destroy (Htab *ht) {
 
 	if (ht) {
+		pthread_mutex_lock (ht->mutex);
+
 		if (ht->table) {
 			for (size_t i = 0; i < ht->size; i++) {
 				if (ht->table[i]) {
@@ -333,6 +401,10 @@ void htab_destroy (Htab *ht) {
 				}
 			}
 		}
+
+		pthread_mutex_unlock (ht->mutex);
+		pthread_mutex_destroy (ht->mutex);
+		free (ht->mutex);
 		
 		htab_delete (ht);
 	}
