@@ -56,7 +56,7 @@ extern int htab_insert (Htab *ht, const void *key, size_t key_size,
 extern void *htab_get_data (Htab *ht, const void *key, size_t key_size);
 
 // removes the data associated with the key from the htab
-extern int htab_remove (Htab *ht, const void *key, size_t key_size);
+extern void *htab_remove (Htab *ht, const void *key, size_t key_size);
 
 // checks if the htab containes the matching value for the key
 extern bool htab_contains_key (Htab *ht, const void *key, size_t key_size);

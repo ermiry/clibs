@@ -277,31 +277,33 @@ bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
 }
 
 // removes the data associated with the key from the htab
-int htab_remove (Htab *ht, const void *key, size_t key_size) {
+void *htab_remove (Htab *ht, const void *key, size_t key_size) {
+
+	void *retval = NULL;
 
 	size_t index;
 	HtabNode *node = NULL, *prev = NULL;
 
-	if (!ht || !key || !ht->compare_f) return 1;
+	if (ht && key && ht->compare_f) {
+		index = ht->hash_f (key, key_size, ht->size);
+		node = ht->table[index];
+		prev = NULL;
+		while (node) {
+			if (!ht->compare_f (key, key_size, node->key, node->key_size)) {
+				if (!prev) ht->table[index] = ht->table[index]->next;
+				else prev->next = node->next;
 
-	index = ht->hash_f (key, key_size, ht->size);
-	node = ht->table[index];
-	prev = NULL;
-	while (node) {
-		if (!ht->compare_f (key, key_size, node->key, node->key_size)) {
-			if (!prev) ht->table[index] = ht->table[index]->next;
-			else prev->next = node->next;
+				retval = node->val;
 
-			htab_node_delete (node, ht->allow_copy, ht->destroy);
-			--ht->count;
-
-			return 0;
+				htab_node_delete (node, ht->allow_copy, ht->destroy);
+				ht->count--;
+			}
+			prev = node;
+			node = node->next;
 		}
-		prev = node;
-		node = node->next;
 	}
 
-	return 1;
+	return retval;
 
 }
 
