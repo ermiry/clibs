@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #include "../../include/collections/htab.h"
@@ -364,6 +366,43 @@ void htab_destroy (Htab *ht) {
 		}
 		
 		htab_delete (ht);
+	}
+
+}
+
+static void htab_node_print (HtabNode *node, size_t idx) {
+
+	if (node) {
+		if (node->key) {
+			int *int_key = (int *) node->key;
+			int *int_value = (int *) node->val;
+			printf ("Node: %ld - Key %d - Value: %d\n", idx, *int_key, *int_value);
+
+			HtabNode *n = node->next;
+			while (n) {
+				int *int_key = (int *) n->key;
+				int *int_value = (int *) n->val;
+				printf ("Node: %ld - Key %d - Value: %d\n", idx, *int_key, *int_value);
+				
+				n = n->next;
+			}
+		}
+	}
+
+}
+
+void htab_print (Htab *htab) {
+
+	if (htab) {
+		printf ("\n\n");
+		printf ("Htab's size: %ld\n", htab->size);
+		printf ("Htab's count: %ld\n", htab->count);
+
+		for (size_t idx = 0; idx < htab->size; idx++) {
+			htab_node_print (htab->table[idx], idx);
+		}
+
+		printf ("\n\n");
 	}
 
 }

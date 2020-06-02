@@ -66,4 +66,6 @@ extern void htab_destroy (Htab *ht);
 
 // extern int htab_get (Htab *ht, const void *key, size_t ksz, void **val, size_t *vsz);
 
+extern void htab_print (Htab *htab);
+
 #endif

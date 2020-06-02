@@ -47,6 +47,8 @@ int main (void) {
         );
     }
 
+    htab_print (map);
+
     for (unsigned int i = 0; i < 50; i++) {
         const void *key = &i;
 
