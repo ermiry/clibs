@@ -125,7 +125,7 @@ static Thpool *thpool_new (void) {
 
 }
 
-void thpool_delete (void *thpool_ptr) {
+static void thpool_delete (void *thpool_ptr) {
 
 	if (thpool_ptr) {
 		Thpool *thpool = (Thpool *) thpool_ptr;
@@ -216,6 +216,7 @@ static void *thread_do (void *thread_ptr) {
 
 #pragma region public
 
+// creates a new thpool with n threads
 Thpool *thpool_create (unsigned int n_threads) {
 
 	Thpool *thpool = thpool_new ();
@@ -243,6 +244,9 @@ Thpool *thpool_create (unsigned int n_threads) {
 
 }
 
+// initializes the thpool
+// must be called after thpool_create ()
+// returns 0 on success, 1 on error
 unsigned int thpool_init (Thpool *thpool) {
 
 	unsigned int retval = 1;
@@ -265,6 +269,7 @@ unsigned int thpool_init (Thpool *thpool) {
 
 }
 
+// sets the name for the thpool
 void thpool_set_name (Thpool *thpool, const char *name) {
 
 	if (thpool) {
@@ -276,12 +281,42 @@ void thpool_set_name (Thpool *thpool, const char *name) {
 
 		while (*from) *to++ = *from++;
     	*to = '\0';
-
-		printf ("%s\n", thpool->name);
 	}
 
 }
 
+// gets the current number of threads that are alive (running) in the thpool
+unsigned int thpool_get_num_threads_alive (Thpool *thpool) {
+
+	unsigned int retval = 0;
+
+	if (thpool) {
+		pthread_mutex_lock (thpool->mutex);
+		retval = thpool->num_threads_alive;
+		pthread_mutex_unlock (thpool->mutex);
+	}
+
+	return retval;
+
+}
+
+// gets the current number of threads that are busy working in a job
+unsigned int thpool_get_num_threads_working (Thpool *thpool) {
+
+	unsigned int retval = 0;
+
+	if (thpool) {
+		pthread_mutex_lock (thpool->mutex);
+		retval = thpool->num_threads_working;
+		pthread_mutex_unlock (thpool->mutex);
+	}
+
+	return retval;
+
+}
+
+// adds a work to the thpool's job queue
+// it will be executed once it is the next in line and a thread is free
 int thpool_add_work (Thpool *thpool, void (*work) (void *), void *args) {
 
 	int retval = 1;
@@ -295,6 +330,22 @@ int thpool_add_work (Thpool *thpool, void (*work) (void *), void *args) {
 
 }
 
+// wait until all jobs have finished
+void thpool_wait (Thpool *thpool) {
+
+	if (thpool) {
+		pthread_mutex_lock (thpool->mutex);
+
+		while (thpool->job_queue->queue->size || thpool->num_threads_working) {
+			pthread_cond_wait (thpool->threads_all_idle, thpool->mutex);
+		}
+
+		pthread_mutex_unlock (thpool->mutex);
+	}
+	
+}
+
+// destroys the thpool and deletes all of its data
 void thpool_destroy (Thpool *thpool) {
 
 	if (thpool) {
@@ -307,15 +358,15 @@ void thpool_destroy (Thpool *thpool) {
 		double tpassed = 0.0;
 		time (&start);
 		while ((tpassed < timeout) && thpool->num_threads_alive){
-			bsem_post_all(thpool->job_queue->has_jobs);
+			bsem_post_all (thpool->job_queue->has_jobs);
 			time (&end);
-			tpassed = difftime(end,start);
+			tpassed = difftime (end,start);
 		}
 
 		// poll remaining threads
 		while (thpool->num_threads_alive){
-			bsem_post_all(thpool->job_queue->has_jobs);
-			sleep(1);
+			bsem_post_all (thpool->job_queue->has_jobs);
+			sleep (1);
 		}
 
 		thpool_delete (thpool);

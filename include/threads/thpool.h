@@ -26,14 +26,31 @@ typedef struct Thpool {
 
 } Thpool;
 
+// creates a new thpool with n threads
 extern Thpool *thpool_create (unsigned int n_threads);
 
+// initializes the thpool
+// must be called after thpool_create ()
+// returns 0 on success, 1 on error
 extern unsigned int thpool_init (Thpool *thpool);
 
+// sets the name for the thpool
 extern void thpool_set_name (Thpool *thpool, const char *name);
 
+// gets the current number of threads that are alive (running) in the thpool
+extern unsigned int thpool_get_num_threads_alive (Thpool *thpool);
+
+// gets the current number of threads that are busy working in a job
+extern unsigned int thpool_get_num_threads_working (Thpool *thpool);
+
+// adds a work to the thpool's job queue
+// it will be executed once it is the next in line and a thread is free
 extern int thpool_add_work (Thpool *thpool, void (*work) (void *), void *args);
 
+// wait until all jobs have finished
+extern void thpool_wait (Thpool *thpool);
+
+// destroys the thpool and deletes all of its data
 extern void thpool_destroy (Thpool *thpool);
 
 #endif
