@@ -1,11 +1,25 @@
-/**********************************
- * @author      Johan Hanssen Seferidis
- * License:     MIT
- *
- **********************************/
-
 #ifndef _THREADS_THPOOL_H_
 #define _THREADS_THPOOL_H_
+
+#include <pthread.h>
+
+#include "jobs.h"
+
+struct _PoolThread;
+
+typedef struct Thpool {
+
+    unsigned int n_threads;
+    struct _PoolThread **threads;
+    volatile unsigned int num_threads_alive;
+    volatile unsigned int num_threads_working;
+
+    pthread_mutex_t *mutex;
+    pthread_cond_t *threads_all_idle;
+
+    JobQueue *job_queue;
+
+} Thpool;
 
 #ifdef __cplusplus
 extern "C" {

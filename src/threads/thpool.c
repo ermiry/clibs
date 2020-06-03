@@ -34,6 +34,101 @@
 static volatile int threads_keepalive;
 static volatile int threads_on_hold;
 
+#pragma region thread
+
+struct _PoolThread {
+
+	int id;
+	pthread_t thread_id;
+	Thpool *thpool;
+
+};
+
+typedef struct _PoolThread PoolThread;
+
+static PoolThread *pool_thread_new (void) {
+
+	PoolThread *thread = (PoolThread *) malloc (sizeof (PoolThread));
+	if (thread) {
+		thread->id = -1;
+		thread->thread_id = 0;
+		thread->thpool = NULL;
+	}
+
+	return thread;
+
+}
+
+static void pool_thread_delete (void *thread_ptr) {
+
+	if (thread_ptr) free (thread_ptr);
+
+}
+
+static PoolThread *pool_thread_create (int id, Thpool *thpool) {
+
+	PoolThread *thread = pool_thread_new ();
+	if (thread) {
+		thread->id = id;
+		thread->thpool = thpool;
+	}
+
+	return thread;
+
+}
+
+#pragma endregion
+
+#pragma region thpool
+
+static Thpool *thpool_new (void) {
+
+	Thpool *thpool = (Thpool *) malloc (sizeof (Thpool));
+	if (thpool) {
+		thpool->n_threads = 0;
+		thpool->threads = NULL;
+		thpool->num_threads_alive = 0;
+		thpool->num_threads_working = 0;
+
+		thpool->mutex = NULL;
+		thpool->threads_all_idle = NULL;
+
+		thpool->job_queue = NULL;
+	}
+
+	return thpool;
+
+}
+
+void thpool_delete (void *thpool_ptr) {
+
+	if (thpool_ptr) {
+		Thpool *thpool = (Thpool *) thpool_ptr;
+
+		if (thpool->threads) {
+			for (unsigned int i = 0; i < thpool->n_threads; i++) {
+				pool_thread_delete (thpool->threads[i]);
+			}
+
+			free (thpool->threads);
+		}
+
+		pthread_mutex_destroy (thpool->mutex);
+		free (thpool->mutex);
+
+		pthread_cond_destroy (thpool->threads_all_idle);
+		free (thpool->threads_all_idle);
+
+		job_queue_delete (thpool->job_queue);
+
+		free (thpool_ptr);
+	}
+
+}
+
+#pragma endregion
+
+
 /* Thread */
 struct thread {
 	int       id;                        /* friendly id               */
