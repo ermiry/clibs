@@ -6,8 +6,8 @@
 /* Binary semaphore */
 typedef struct bsem {
 
-	pthread_mutex_t mutex;
-	pthread_cond_t   cond;
+	pthread_mutex_t *mutex;
+	pthread_cond_t *cond;
 	int v;
 	
 } bsem;

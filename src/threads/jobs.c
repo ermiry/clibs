@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
-#include "cerver/collections/dllist.h"
+#include "../../include/collections/dllist.h"
 
-#include "cerver/threads/jobs.h"
-#include "cerver/threads/common.h"
+#include "../../include/threads/bsem.h"
+#include "../../include/threads/jobs.h"
 
 void job_queue_clear (JobQueue *job_queue);
 
