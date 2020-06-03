@@ -15,8 +15,8 @@
 #include <sys/prctl.h>
 #endif
 
-#include "cerver/threads/thpool.h"
-#include "cerver/threads/common.h"
+#include "../../include/threads/thpool.h"
+#include "../../include/threads/bsem.h"
 
 #ifdef THPOOL_DEBUG
 #define THPOOL_DEBUG 1
