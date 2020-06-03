@@ -50,9 +50,12 @@ int main (void) {
     }
 
     // wait for all threads to finish
+    printf ("\n\nWaiting 3 secs...\n");
     sleep (3);
 
     thpool_destroy (thpool);
+
+    printf ("\nDone!\n");
 
     return 0;
 
