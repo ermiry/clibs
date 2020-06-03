@@ -36,7 +36,7 @@ typedef struct Htab {
 	size_t (*hash)(const void *key, size_t key_size, size_t table_size);
 
 	// int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2);
-	void *(*key_create)(void *);
+	void *(*key_create)(const void *);
 	void (*key_delete)(void *);
 	int (*key_compare)(const void *one, const void *two);
 
@@ -50,7 +50,7 @@ typedef struct Htab {
 // sets a method to correctly create (allocate) a new key
 // your original key data is passed as the argument to this method
 // if not set, a genreic internal method will be called instead
-extern void htab_set_key_create (Htab *htab, void *(*key_create)(void *));
+extern void htab_set_key_create (Htab *htab, void *(*key_create)(const void *));
 
 // sets a method to correctly delete (free) your previous allocated key
 // a ptr to the allocated key if passed for you to correctly handle it

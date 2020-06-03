@@ -28,34 +28,26 @@ static int htab_generic_compare (const void *k1, size_t s1, const void *k2, size
 	return memcmp (k1, k2, s1);
 }
 
-static int htab_generic_copy (void **dst, const void *src, size_t sz) {
-
-	if (!dst || !src || !sz) return -1;
-
-	if (!*dst) *dst = malloc (sz);
-
-	if (!*dst) return -1;
-
-	memcpy (*dst, src, sz);
-
-	return 0;
-}
-
 #pragma endregion
 
 #pragma region internal
 
-static int htab_internal_key_create (Htab *htab) {
+static inline void *htab_internal_key_create (void *(*key_create)(const void *), 
+	const void *key, size_t key_size) {
 
-	// htab->key_create ? 
+	void *retval = NULL;
+
+	if (key_create) retval = key_create (key);
+	else {
+		retval = malloc (key_size);
+		memcpy (retval, key, key_size);
+	}
+
+	return retval;
 
 }
 
-static int htab_internal_key_delete (Htab *htab) {
-	
-}
-
-static int htab_internal_key_compare (Htab *htab,
+static inline int htab_internal_key_compare (Htab *htab,
 	const void *k1, size_t s1, const void *k2, size_t s2) {
 
 	return htab->key_compare ? 
@@ -79,14 +71,13 @@ static HtabNode *htab_node_new (void) {
 
 }
 
-static HtabNode *htab_node_create (const void *key, size_t key_size, void *val, size_t val_size) {
+static HtabNode *htab_node_create (const void *key, size_t key_size, void *val, size_t val_size,
+	void *(*key_create)(void const *)) {
 
 	HtabNode *node = htab_node_new ();
 	if (node) {
-		// TODO: option for custom key copy
 		node->key_size = key_size;
-		node->key = malloc (node->key_size);
-		htab_generic_copy (&node->key, key, node->key_size);
+		node->key = htab_internal_key_create (key_create, key, key_size);
 
 		node->val = val;
 		node->val_size = val_size;
@@ -96,14 +87,19 @@ static HtabNode *htab_node_create (const void *key, size_t key_size, void *val, 
 
 }
 
-static void htab_node_delete (HtabNode *node, void (*delete_data)(void *data)) {
+static void htab_node_delete (HtabNode *node,
+	void (*key_delete)(void *),
+	void (*delete_data)(void *data)) {
 
 	if (node) {
 		if (node->val) {
 			if (delete_data) delete_data (node->val);
 		}
 
-		if (node->key) free (node->key);
+		if (node->key) {
+			if (key_delete) key_delete (node->key) ;
+			else free (node->key);
+		}
 
 		free (node);
 	}
@@ -122,14 +118,16 @@ static HtabBucket *htab_bucket_new (void) {
 
 }
 
-static void htab_bucket_delete (HtabBucket *bucket, void (*delete_data)(void *data)) {
+static void htab_bucket_delete (HtabBucket *bucket, 
+	void (*key_delete)(void *),
+	void (*delete_data)(void *data)) {
 
 	if (bucket) {
 		while (bucket->count) {
 			HtabNode *node = bucket->start;
 			bucket->start = bucket->start->next;
 
-			htab_node_delete (node, delete_data);
+			htab_node_delete (node, key_delete, delete_data);
 
 			bucket->count--;
 		}
@@ -175,7 +173,7 @@ static Htab *htab_new (void) {
 // sets a method to correctly create (allocate) a new key
 // your original key data is passed as the argument to this method
 // if not set, a genreic internal method will be called instead
-void htab_set_key_create (Htab *htab, void *(*key_create)(void *)) {
+void htab_set_key_create (Htab *htab, void *(*key_create)(const void *)) {
 
 	if (htab) {
 		htab->key_create = key_create;
@@ -343,7 +341,8 @@ int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t v
 
 			if (htab_internal_key_compare (ht,
 				key, key_size, node->key, node->key_size)) {
-				node->next = htab_node_create (key, key_size, val, val_size);
+				node->next = htab_node_create (key, key_size, val, val_size,
+					ht->key_create);
 				if (node->next) {
 					node = node->next;
 
@@ -356,7 +355,8 @@ int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t v
 		}
 
 		else {
-			node = htab_node_create (key, key_size, val, val_size);
+			node = htab_node_create (key, key_size, val, val_size,
+				ht->key_create);
 			if (node) {
 				bucket->start = node;
 
@@ -431,7 +431,7 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 
 				retval = node->val;
 
-				htab_node_delete (node, NULL);
+				htab_node_delete (node, ht->key_delete, ht->delete_data);
 
 				bucket->count--;
 				ht->count--;
@@ -458,7 +458,11 @@ void htab_destroy (Htab *ht) {
 		if (ht->table) {
 			for (size_t i = 0; i < ht->size; i++) {
 				if (ht->table[i]) {
-					htab_bucket_delete (ht->table[i], ht->delete_data);
+					htab_bucket_delete (
+						ht->table[i], 
+						ht->key_delete, 
+						ht->delete_data
+					);
 				}
 			}
 		}
