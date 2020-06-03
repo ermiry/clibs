@@ -34,28 +34,6 @@
 static volatile int threads_keepalive;
 static volatile int threads_on_hold;
 
-
-
-/* ========================== STRUCTURES ============================ */
-
-/* Job */
-// struct job {
-// 	struct job*  prev;                   /* pointer to previous job   */
-// 	void   (*function)(void* arg);       /* function pointer          */
-// 	void*  arg;                          /* function's argument       */
-// };
-
-
-/* Job queue */
-// struct jobqueue{
-// 	pthread_mutex_t rwmutex;             /* used for queue r/w access */
-// 	struct job  *front;                         /* pointer to front of queue */
-// 	struct job  *rear;                          /* pointer to rear  of queue */
-// 	bsem *has_jobs;                      /* flag as binary semaphore  */
-// 	int   len;                           /* number of jobs in queue   */
-// };
-
-
 /* Thread */
 struct thread {
 	int       id;                        /* friendly id               */
@@ -75,10 +53,6 @@ struct thpool_{
 	JobQueue *job_queue;
 };
 
-
-
-
-
 /* ========================== PROTOTYPES ============================ */
 
 
@@ -86,13 +60,6 @@ static int  thread_init(struct thpool_* thpool_p, struct thread** thread_p, int 
 static void* thread_do(struct thread* thread_p);
 static void  thread_hold(int sig_id);
 static void  thread_destroy(struct thread* thread_p);
-
-// static int   jobqueue_init(struct jobqueue* jobqueue_p);
-// static void  jobqueue_clear(struct jobqueue* jobqueue_p);
-// static void  jobqueue_push(struct jobqueue* jobqueue_p, struct job* newjob_p);
-// static struct job* jobqueue_pull(struct jobqueue* jobqueue_p);
-// static void  jobqueue_destroy(struct jobqueue* jobqueue_p);
-
 
 /* ========================== THREADPOOL ============================ */
 
@@ -379,106 +346,3 @@ static void* thread_do(struct thread* thread_p){
 static void thread_destroy (struct thread* thread_p){
 	free(thread_p);
 }
-
-
-
-
-
-/* ============================ JOB QUEUE =========================== */
-
-
-/* Initialize queue */
-// static int jobqueue_init(struct jobqueue* jobqueue_p){
-// 	jobqueue_p->len = 0;
-// 	jobqueue_p->front = NULL;
-// 	jobqueue_p->rear  = NULL;
-
-// 	jobqueue_p->has_jobs = (struct bsem*)malloc(sizeof(struct bsem));
-// 	if (jobqueue_p->has_jobs == NULL){
-// 		return -1;
-// 	}
-
-// 	pthread_mutex_init(&(jobqueue_p->rwmutex), NULL);
-// 	bsem_init(jobqueue_p->has_jobs, 0);
-
-// 	return 0;
-// }
-
-
-// /* Clear the queue */
-// static void jobqueue_clear(struct jobqueue* jobqueue_p){
-
-// 	while(jobqueue_p->len){
-// 		free(jobqueue_pull(jobqueue_p));
-// 	}
-
-// 	jobqueue_p->front = NULL;
-// 	jobqueue_p->rear  = NULL;
-// 	bsem_reset(jobqueue_p->has_jobs);
-// 	jobqueue_p->len = 0;
-
-// }
-
-
-// /* Add (allocated) job to queue
-//  */
-// static void jobqueue_push(struct jobqueue* jobqueue_p, struct job* newjob){
-
-// 	pthread_mutex_lock(&jobqueue_p->rwmutex);
-// 	newjob->prev = NULL;
-
-// 	switch(jobqueue_p->len){
-
-// 		case 0:  /* if no jobs in queue */
-// 					jobqueue_p->front = newjob;
-// 					jobqueue_p->rear  = newjob;
-// 					break;
-
-// 		default: /* if jobs in queue */
-// 					jobqueue_p->rear->prev = newjob;
-// 					jobqueue_p->rear = newjob;
-
-// 	}
-// 	jobqueue_p->len++;
-
-// 	bsem_post(jobqueue_p->has_jobs);
-// 	pthread_mutex_unlock(&jobqueue_p->rwmutex);
-// }
-
-
-// /* Get first job from queue(removes it from queue)
-//  */
-// static struct job* jobqueue_pull(struct jobqueue* jobqueue_p){
-
-// 	pthread_mutex_lock(&jobqueue_p->rwmutex);
-// 	struct job* job_p = jobqueue_p->front;
-
-// 	switch(jobqueue_p->len){
-
-// 		case 0:  /* if no jobs in queue */
-// 		  			break;
-
-// 		case 1:  /* if one job in queue */
-// 					jobqueue_p->front = NULL;
-// 					jobqueue_p->rear  = NULL;
-// 					jobqueue_p->len = 0;
-// 					break;
-
-// 		default: /* if >1 jobs in queue */
-// 					jobqueue_p->front = job_p->prev;
-// 					jobqueue_p->len--;
-// 					/* more than one job in queue -> post it */
-// 					bsem_post(jobqueue_p->has_jobs);
-
-// 	}
-
-// 	pthread_mutex_unlock(&jobqueue_p->rwmutex);
-// 	return job_p;
-// }
-
-
-// /* Free all queue resources back to the system */
-// static void jobqueue_destroy(struct jobqueue* jobqueue_p){
-// 	jobqueue_clear(jobqueue_p);
-// 	free(jobqueue_p->has_jobs);
-// }
