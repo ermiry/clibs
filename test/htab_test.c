@@ -100,7 +100,7 @@ int test_int_remove (void) {
         Data *data = (Data *) htab_remove (map, key, sizeof (int));
         if (data) {
             // data_print (data);
-            data_delete (data);
+            // data_delete (data);
         }
 
         else {
@@ -151,13 +151,13 @@ int test_int_insert_remove (void) {
     for (unsigned int i = 0; i < n_elements; i++) {
         // const void *key = &i;
         int key_int = rand () % 99 + 1;
-        printf ("key_int: %d\n", key_int);
+        // printf ("key_int: %d\n", key_int);
         const void *key = &key_int;
 
         Data *data = (Data *) htab_remove (map, key, sizeof (int));
         if (data) {
             // data_print (data);
-            data_delete (data);
+            // data_delete (data);
             removed += 1;
         }
     }
@@ -215,7 +215,7 @@ int test_int_get (void) {
         }
 
         else {
-            if (key_int > n_elements) printf ("[OKAY]: no data for key: %d\n", key_int);
+            if (key_int >= n_elements) printf ("[OKAY]: no data for key: %d\n", key_int);
             else printf ("[ERROR]: NO DATA FOR KEY: %d\n", key_int);
         }
     }
@@ -262,7 +262,7 @@ int test_int_contains (void) {
         const void *key = &key_int;
 
         if (!htab_contains_key (map, key, sizeof (int))) {
-            if (key_int > n_elements) printf ("[OKAY]: no data for key: %d\n", key_int);
+            if (key_int >= n_elements) printf ("[OKAY]: no data for key: %d\n", key_int);
             else printf ("[ERROR]: NO DATA FOR KEY: %d\n", key_int);
         }
     }
@@ -338,7 +338,7 @@ void *int_thread_remove (void *data_ptr) {
         Data *data = (Data *) htab_remove (thread_data->map, key, sizeof (int));
         if (data) {
             // data_print (data);
-            data_delete (data);
+            // data_delete (data);
             removed += 1;
         }
 
@@ -405,7 +405,7 @@ int test_int_thread_insert_remove (void) {
 
 #pragma region User
 
-
+// TODO:
 
 #pragma endregion
 
@@ -415,15 +415,15 @@ int main (void) {
 
     int errors = 0;
 
-    // errors |= test_int_insert ();
+    errors |= test_int_insert ();
 
-    // errors |= test_int_remove ();
+    errors |= test_int_remove ();
 
-    // errors |= test_int_insert_remove ();
+    errors |= test_int_insert_remove ();
 
-    // errors |= test_int_get ();
+    errors |= test_int_get ();
 
-    // errors |= test_int_contains ();
+    errors |= test_int_contains ();
 
     errors |= test_int_thread_insert_remove ();
 
