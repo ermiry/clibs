@@ -5,6 +5,10 @@
 
 #include "../include/collections/htab.h"
 
+#include "user.h"
+
+#pragma region int
+
 typedef struct Data {
 
     int idx;
@@ -30,7 +34,6 @@ int test_int_insert (void) {
 
     Htab *map = htab_create (
         HTAB_DEFAULT_INIT_SIZE,
-        NULL,
         NULL,
         data_delete
     );
@@ -68,7 +71,6 @@ int test_int_remove (void) {
 
     Htab *map = htab_create (
         HTAB_DEFAULT_INIT_SIZE,
-        NULL,
         NULL,
         data_delete
     );
@@ -122,7 +124,6 @@ int test_int_insert_remove (void) {
 
     Htab *map = htab_create (
         HTAB_DEFAULT_INIT_SIZE,
-        NULL,
         NULL,
         data_delete
     );
@@ -180,7 +181,6 @@ int test_int_get (void) {
     Htab *map = htab_create (
         HTAB_DEFAULT_INIT_SIZE,
         NULL,
-        NULL,
         data_delete
     );
 
@@ -234,7 +234,6 @@ int test_int_contains (void) {
 
     Htab *map = htab_create (
         HTAB_DEFAULT_INIT_SIZE,
-        NULL,
         NULL,
         data_delete
     );
@@ -363,7 +362,6 @@ int test_int_thread_insert_remove (void) {
     Htab *map = htab_create (
         HTAB_DEFAULT_INIT_SIZE,
         NULL,
-        NULL,
         data_delete
     );
 
@@ -402,6 +400,14 @@ int test_int_thread_insert_remove (void) {
     return 0;
 
 }
+
+#pragma endregion
+
+#pragma region User
+
+
+
+#pragma endregion
 
 int main (void) {
 

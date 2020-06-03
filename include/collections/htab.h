@@ -34,10 +34,11 @@ typedef struct Htab {
 	size_t count;
 
 	size_t (*hash)(const void *key, size_t key_size, size_t table_size);
-	int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2);
 
-	// TODO: allow for key value copy
-	// int (*copy)(void **dst, const void *src, size_t sz);
+	// int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2);
+	void *(*key_create)(void *);
+	void (*key_delete)(void *);
+	int (*key_compare)(const void *one, const void *two);
 
 	// method to delete the data
 	void (*delete_data)(void *data);
@@ -46,15 +47,28 @@ typedef struct Htab {
 
 } Htab;
 
+// sets a method to correctly create (allocate) a new key
+// your original key data is passed as the argument to this method
+// if not set, a genreic internal method will be called instead
+extern void htab_set_key_create (Htab *htab, void *(*key_create)(void *));
+
+// sets a method to correctly delete (free) your previous allocated key
+// a ptr to the allocated key if passed for you to correctly handle it
+// if not set, free will be used as default
+extern void htab_set_key_delete (Htab *htab, void (*key_delete)(void *));
+
+// sets a method to correctly compare keys
+// usefull if you want to compare your keys (data) by specific fields
+// if not set, a generic method will be used instead
+extern void htab_set_key_comparator (Htab *htab, 
+	int (*key_compare)(const void *one, const void *two));
+
 // creates a new htab
 // size - how many buckets do you want - more buckets = less collisions
-// hash - custom method to hash the key for insertion
-// compare - custom method to compare keys
+// hash - custom method to hash the key for insertion, NULL for default
 // delete_data - custom method to delete your data, NULL for no delete when htab gets destroyed
-extern Htab *htab_create (
-	size_t size,
+extern Htab *htab_create (size_t size,
 	size_t (*hash)(const void *key, size_t key_size, size_t table_size),
-	int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2),
 	void (*delete_data)(void *data)
 );
 

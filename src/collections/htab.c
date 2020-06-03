@@ -6,6 +6,8 @@
 
 #include "../../include/collections/htab.h"
 
+#pragma region generic
+
 static size_t htab_generic_hash (const void *key, size_t key_size, size_t table_size) {
 
 	size_t i;
@@ -39,7 +41,28 @@ static int htab_generic_copy (void **dst, const void *src, size_t sz) {
 	return 0;
 }
 
+#pragma endregion
+
 #pragma region internal
+
+static int htab_internal_key_create (Htab *htab) {
+
+	// htab->key_create ? 
+
+}
+
+static int htab_internal_key_delete (Htab *htab) {
+	
+}
+
+static int htab_internal_key_compare (Htab *htab,
+	const void *k1, size_t s1, const void *k2, size_t s2) {
+
+	return htab->key_compare ? 
+		htab->key_compare (k1, k2) :
+		htab_generic_compare (k1, s1, k2, s2);
+	
+}
 
 static HtabNode *htab_node_new (void) {
 
@@ -135,7 +158,10 @@ static Htab *htab_new (void) {
 		htab->count = 0;
 
 		htab->hash = NULL;
-		htab->compare = NULL;
+
+		htab->key_create = NULL;
+		htab->key_delete = NULL;
+		htab->key_compare = NULL;
 
 		htab->delete_data = NULL;
 	}
@@ -146,14 +172,45 @@ static Htab *htab_new (void) {
 
 #pragma endregion
 
+// sets a method to correctly create (allocate) a new key
+// your original key data is passed as the argument to this method
+// if not set, a genreic internal method will be called instead
+void htab_set_key_create (Htab *htab, void *(*key_create)(void *)) {
+
+	if (htab) {
+		htab->key_create = key_create;
+	}
+
+}
+
+// sets a method to correctly delete (free) your previous allocated key
+// a ptr to the allocated key if passed for you to correctly handle it
+// if not set, free will be used as default
+void htab_set_key_delete (Htab *htab, void (*key_delete)(void *)) {
+
+	if (htab) {
+		htab->key_delete = key_delete;
+	}
+
+}
+
+// sets a method to correctly compare keys
+// usefull if you want to compare your keys (data) by specific fields
+// if not set, a generic method will be used instead
+void htab_set_key_comparator (Htab *htab, int (*key_compare)(const void *one, const void *two)) {
+
+	if (htab) {
+		htab->key_compare = key_compare;
+	}
+
+}
+
 // creates a new htab
 // size - how many buckets do you want - more buckets = less collisions
-// hash - custom method to hash the key for insertion
-// compare - custom method to compare keys
+// hash - custom method to hash the key for insertion, NULL for default
 // delete_data - custom method to delete your data, NULL for no delete when htab gets destroyed
 Htab *htab_create (size_t size,
 	size_t (*hash)(const void *key, size_t key_size, size_t table_size),
-	int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2),
 	void (*delete_data)(void *data)) {
 
 	Htab *htab = htab_new ();
@@ -167,7 +224,7 @@ Htab *htab_create (size_t size,
 					htab->table[i] = htab_bucket_new ();
 
 				htab->hash = hash ? hash : htab_generic_hash;
-				htab->compare = compare ? compare : htab_generic_compare;
+				// htab->compare = compare ? compare : htab_generic_compare;
 
 				htab->delete_data = delete_data;
 			}
@@ -246,7 +303,8 @@ bool htab_contains_key (Htab *ht, const void *key, size_t key_size) {
 		HtabNode *node = ht->table[index]->start;
 		while (node && node->key && node->val) {
 			if (node->key_size == key_size) {
-				if (!ht->compare (key, key_size, node->key, node->key_size)) {
+				if (!htab_internal_key_compare (ht, 
+					key, key_size, node->key, node->key_size)) {
 					retval = true;
 					break;
 				}
@@ -270,7 +328,7 @@ int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t v
 
 	int retval = 1;
 
-	if (ht && ht->hash && ht->compare && key && key_size && val && val_size) {
+	if (ht && ht->hash && key && key_size && val && val_size) {
 		pthread_mutex_lock (ht->mutex);
 
 		size_t index = ht->hash (key, key_size, ht->size);
@@ -280,10 +338,11 @@ int htab_insert (Htab *ht, const void *key, size_t key_size, void *val, size_t v
 		HtabBucket *bucket = ht->table[index];
 		HtabNode *node = bucket->start;
 		if (node) {
-			while (node->next && ht->compare (key, key_size, node->key, node->key_size))
+			while (node->next && htab_internal_key_compare (ht, key, key_size, node->key, node->key_size))
 				node = node->next;
 
-			if (ht->compare (key, key_size, node->key, node->key_size)) {
+			if (htab_internal_key_compare (ht,
+				key, key_size, node->key, node->key_size)) {
 				node->next = htab_node_create (key, key_size, val, val_size);
 				if (node->next) {
 					node = node->next;
@@ -321,14 +380,15 @@ void *htab_get (Htab *ht, const void *key, size_t key_size) {
 
 	void *retval = NULL;
 
-	if (ht) {
+	if (ht && key) {
 		pthread_mutex_lock (ht->mutex);
 
 		size_t index = ht->hash (key, key_size, ht->size);
 		HtabNode *node = ht->table[index]->start;  
 		while (node && node->key && node->val) {
 			if (node->key_size == key_size) {
-				if (!ht->compare (key, key_size, node->key, node->key_size)) {
+				if (!htab_internal_key_compare (ht,
+					key, key_size, node->key, node->key_size)) {
 					retval = node->val;
 					break;
 				}
@@ -356,7 +416,7 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 
 	void *retval = NULL;
 
-	if (ht && key && ht->hash && ht->compare) {
+	if (ht && key && ht->hash) {
 		pthread_mutex_lock (ht->mutex);
 
 		size_t index = ht->hash (key, key_size, ht->size);
@@ -364,7 +424,8 @@ void *htab_remove (Htab *ht, const void *key, size_t key_size) {
 		HtabNode *node = bucket->start;
 		HtabNode *prev = NULL;
 		while (node) {
-			if (!ht->compare (key, key_size, node->key, node->key_size)) {
+			if (!htab_internal_key_compare (ht, 
+				key, key_size, node->key, node->key_size)) {
 				if (!prev) ht->table[index]->start = ht->table[index]->start->next;
 				else prev->next = node->next;
 
