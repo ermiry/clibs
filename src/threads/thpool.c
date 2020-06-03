@@ -3,6 +3,9 @@
 //  * License:	     MIT
 //  ********************************/
 
+#include <stdlib.h>
+#include <string.h>
+
 #define _POSIX_C_SOURCE 200809L
 #include <unistd.h>
 #include <signal.h>
@@ -103,6 +106,8 @@ static Thpool *thpool_new (void) {
 
 	Thpool *thpool = (Thpool *) malloc (sizeof (Thpool));
 	if (thpool) {
+		thpool->name = NULL;
+
 		thpool->n_threads = 0;
 		thpool->threads = NULL;
 
@@ -124,6 +129,8 @@ void thpool_delete (void *thpool_ptr) {
 
 	if (thpool_ptr) {
 		Thpool *thpool = (Thpool *) thpool_ptr;
+
+		if (thpool->name) free ((char *) thpool->name);
 
 		if (thpool->threads) {
 			for (unsigned int i = 0; i < thpool->n_threads; i++) {
@@ -156,7 +163,13 @@ static void *thread_do (void *thread_ptr) {
 		PoolThread *thread = (PoolThread *) thread_ptr;
 		Thpool *thpool = thread->thpool;
 
-		// FIXME: set name
+		// set name
+		if (thpool->name) {
+			char thread_name[64] = { 0 };
+			snprintf (thread_name, 64, "thpool-%s-%d", thpool->name, thread->id);
+			printf ("%s\n", thread_name);
+			prctl (PR_SET_NAME, thread_name);
+		}
 
 		// mark thread as alive
 		pthread_mutex_lock (thpool->mutex);
@@ -217,16 +230,6 @@ Thpool *thpool_create (unsigned int n_threads) {
 			pthread_cond_init (thpool->threads_all_idle, NULL);
 
 			thpool->job_queue = job_queue_create ();
-
-			// initialize threads
-			thpool->keep_alive = true;
-			for (unsigned int i = 0; i < thpool->n_threads; i++) {
-				thpool->threads[i] = pool_thread_create (i, thpool);
-				pool_thread_init (thpool->threads[i]);
-			}
-
-			// wait for threads to initialize
-			while (thpool->num_threads_alive != thpool->n_threads) {}
 		}
 
 		else {
@@ -237,6 +240,45 @@ Thpool *thpool_create (unsigned int n_threads) {
 	}
 
 	return thpool;
+
+}
+
+unsigned int thpool_init (Thpool *thpool) {
+
+	unsigned int retval = 1;
+
+	if (thpool) {
+		// initialize threads
+		thpool->keep_alive = true;
+		for (unsigned int i = 0; i < thpool->n_threads; i++) {
+			thpool->threads[i] = pool_thread_create (i, thpool);
+			pool_thread_init (thpool->threads[i]);
+		}
+
+		// wait for threads to initialize
+		while (thpool->num_threads_alive != thpool->n_threads) {}
+
+		retval = 0;
+	}
+
+	return retval;
+
+}
+
+void thpool_set_name (Thpool *thpool, const char *name) {
+
+	if (thpool) {
+		size_t len = strlen (name);
+		thpool->name = (char *) calloc (len + 1, sizeof (char));
+
+		char *to = (char *) thpool->name;
+		char *from = (char *) name;
+
+		while (*from) *to++ = *from++;
+    	*to = '\0';
+
+		printf ("%s\n", thpool->name);
+	}
 
 }
 

@@ -43,6 +43,8 @@ void thread_count (void *data_ptr) {
 int main (void) {
 
     Thpool *thpool = thpool_create (4);
+    thpool_set_name (thpool, "test");
+    thpool_init (thpool);
 
     for (unsigned int i = 1; i < 11; i++) {
          Data *data = data_new (i, 1000);

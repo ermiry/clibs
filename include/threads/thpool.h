@@ -10,6 +10,8 @@ struct _PoolThread;
 
 typedef struct Thpool {
 
+    const char *name;
+
     unsigned int n_threads;
     struct _PoolThread **threads;
 
@@ -25,6 +27,10 @@ typedef struct Thpool {
 } Thpool;
 
 extern Thpool *thpool_create (unsigned int n_threads);
+
+extern unsigned int thpool_init (Thpool *thpool);
+
+extern void thpool_set_name (Thpool *thpool, const char *name);
 
 extern int thpool_add_work (Thpool *thpool, void (*work) (void *), void *args);
 
