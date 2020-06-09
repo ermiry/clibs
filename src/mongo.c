@@ -403,8 +403,11 @@ const bson_t *mongo_find_one (mongoc_collection_t *collection, bson_t *query, Do
 
 		mongoc_cursor_next (cursor, &doc);
 
-		bson_destroy (query);
 		mongoc_cursor_destroy (cursor);
+
+		if (opts) bson_destroy (opts);
+
+		bson_destroy (query);
 	}
 
 	return doc;
