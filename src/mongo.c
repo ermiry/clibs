@@ -131,7 +131,7 @@ int mongo_ping_db (void) {
 
 	if (client) {
 		if (db_name) {
-			bson_t *command, reply, *insert;
+			bson_t *command = NULL, reply = { 0 };
 			bson_error_t error;
 
 			command = BCON_NEW ("ping", BCON_INT32 (1));
