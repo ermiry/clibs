@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
-#include "collections/dllist.h"
-#include "collections/queue.h"
+#include "../../include/collections/dllist.h"
+#include "../../include/collections/queue.h"
 
 #pragma region internal
 
@@ -70,5 +70,38 @@ void queue_clear (Queue *queue) {
     if (queue) {
         dlist_clear (queue->dlist);
     }
+
+}
+
+// inserts the data at the end of the queue
+unsigned int queue_push (Queue *queue, void *data) {
+
+    unsigned int retval = 1;
+
+    if (queue && data) {
+        retval = dlist_insert_after (
+            queue->dlist,
+            dlist_end (queue->dlist),
+            data
+        );
+    }
+
+    return retval;
+
+}
+
+// gets the oldest data (the one at the start)
+void *queue_pop (Queue *queue) {
+
+    void *retval = NULL;
+
+    if (queue) {
+        retval = dlist_remove_element (
+            queue->dlist,
+            NULL
+        );
+    }
+
+    return retval;
 
 }
