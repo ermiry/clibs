@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 
-#include "cerver/collections/avl.h"
+#include "collections/avl.h"
 
 unsigned int avl_clear_tree (AVLTree *tree, void (*destroy)(void *data));
 
