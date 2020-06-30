@@ -2,6 +2,7 @@
 #define _UTILS_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 /*** misc ***/
 
@@ -31,6 +32,8 @@ extern float random_float (float abs);
 extern int xtoi (char *hexString);
 
 extern char *itoa (int i, char *b);
+
+extern uint32_t convert_rgba_to_hex (uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
 /*** c strings ***/
 
@@ -81,7 +84,7 @@ extern char *c_string_remove_sub_simetric_token (char *str, const char token, ch
 // example: test_20191118142101759__TEST__.png - token: '_' - idx (first: 1,  last: 3)
 // result: testTEST__.png
 // returns a newly allocated string, and a option to get the substring
-extern char *c_string_remove_sub_range_token (char *str, const char token, unsigned int first, int last,
+extern char *c_string_remove_sub_range_token (char *str, const char token, unsigned int first, unsigned int last,
 	char **sub);
 
 #endif

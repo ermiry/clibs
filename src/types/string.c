@@ -158,13 +158,13 @@ void str_append_c_string (String *s, const char *c_str) {
 
 void str_to_upper (String *string) {
 
-    if (string) for (int i = 0; i < string->len; i++) string->str[i] = toupper (string->str[i]);
+    if (string) for (unsigned int i = 0; i < string->len; i++) string->str[i] = toupper (string->str[i]);
 
 }
 
 void str_to_lower (String *string) {
 
-    if (string) for (int i = 0; i < string->len; i++) string->str[i] = tolower (string->str[i]);
+    if (string) for (unsigned int i = 0; i < string->len; i++) string->str[i] = tolower (string->str[i]);
 
 }
 
@@ -173,9 +173,8 @@ int str_compare (const String *s1, const String *s2) { return strcmp (s1->str, s
 int str_comparator (const void *a, const void *b) {
 
     if (a && b) return strcmp (((String *) a)->str, ((String *) b)->str);
-    if (a && !b) return -1;
-    if (!a && b) return 1;
-    return 0;
+
+    return -1;
 
 }
 
@@ -255,9 +254,9 @@ void str_remove_last_char (String *s) {
 
 int str_contains (String *string, char *to_find) {
 
-    int slen = string->len;
-    int tFlen = strlen (to_find);
-    int found = 0;
+    unsigned int slen = string->len;
+    unsigned int tFlen = (unsigned int) strlen (to_find);
+    unsigned int found = 0;
 
     if (slen >= tFlen) {
         for (unsigned int s = 0, t = 0; s < slen; s++) {
