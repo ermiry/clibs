@@ -73,8 +73,6 @@ void log_msg (FILE *__restrict __stream, LogType first_type, LogType second_type
 					case LOG_WARNING: fprintf (__stream, LOG_COLOR_YELLOW "%s" LOG_COLOR_RESET, message); break;
 					case LOG_SUCCESS: fprintf (__stream, LOG_COLOR_GREEN "%s" LOG_COLOR_RESET, message); break;
 
-					case LOG_CERVER: fprintf (__stream, LOG_COLOR_BLUE "%s" LOG_COLOR_RESET, message); break;
-
 					default: fprintf (__stream, "%s", message); break;
 				}
 
