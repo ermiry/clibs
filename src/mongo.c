@@ -9,7 +9,7 @@
 
 #include "types/string.h"
 
-#include "../include/collections/dllist.h"
+#include "collections/dlist.h"
 
 #include "mongo.h"
 
@@ -180,7 +180,7 @@ int mongo_connect (void) {
 	int retval = 1;
 
 	if (uri_string) {
-		bson_error_t error;
+		bson_error_t error = { 0 };
 
 		mongoc_init ();     // init mongo internals
 
@@ -306,7 +306,7 @@ static bson_t *mongo_find_generate_opts (DoubleList *select) {
 	if (opts) {
 		// append projection
 		if (select) {
-			bson_t projection_doc;
+			bson_t projection_doc = { 0 };
 			bson_append_document_begin (opts, "projection", -1, &projection_doc);
 
 			bson_append_bool (&projection_doc, "_id", -1, true);
@@ -356,35 +356,53 @@ mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection,
 
 // use a query to find all matching documents
 // an empty query will return all the docs in a collection
-bson_t **mongo_find_all (mongoc_collection_t *collection, bson_t *query, uint64_t *n_docs) {
+const bson_t **mongo_find_all (mongoc_collection_t *collection, 
+	bson_t *query, DoubleList *select,
+	uint64_t *n_docs) {
 
-	bson_t **retval = NULL;
+	const bson_t **retval = NULL;
 	*n_docs = 0;
 
 	if (collection && query) {
 		uint64_t count = mongo_count_docs (collection, bson_copy (query));
 		if (count > 0) {
-			retval = (bson_t **) calloc (count, sizeof (bson_t *));
+			retval = (const bson_t **) calloc (count, sizeof (bson_t *));
 			for (uint64_t i = 0; i < count; i++) retval[i] = bson_new ();
 
-			const bson_t *doc;
-			mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
+			bson_t *opts = mongo_find_generate_opts (select);
+
+			mongoc_cursor_t *cursor = mongoc_collection_find_with_opts (collection, query, opts, NULL);
 
 			uint64_t i = 0;
-			while (mongoc_cursor_next (cursor, &doc)) {
+			// const bson_t *doc = NULL;
+			while (mongoc_cursor_next (cursor, &retval[i])) {
 				// add the matching doc into our retval array
-				bson_copy_to (doc, retval[i]);
+				// bson_copy_to (doc, retval[i]);
 				i++;
 			}
 
 			*n_docs = count;
 
-			bson_destroy (query);
 			mongoc_cursor_destroy (cursor);
+
+			if (opts) bson_destroy (opts);
+
+			bson_destroy (query);
 		}
 	}
 
 	return retval;
+
+}
+
+// correctly destroys an array of docs got from mongo_find_all ()
+void mongo_find_all_destroy_docs (bson_t **docs, uint64_t count) {
+
+	if (docs) {
+		for (uint64_t i = 0; i < count; i++) bson_destroy (docs[i]);
+
+        free (docs);
+	}
 
 }
 

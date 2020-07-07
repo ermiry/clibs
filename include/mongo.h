@@ -66,9 +66,13 @@ extern mongoc_cursor_t *mongo_find_all_cursor (mongoc_collection_t *collection,
 	uint64_t *n_docs);
 
 // use a query to find all matching documents
-// an empty query will return all the docs
-extern bson_t **mongo_find_all (mongoc_collection_t *collection, bson_t *query, 
+// an empty query will return all the docs in a collection
+extern const bson_t **mongo_find_all (mongoc_collection_t *collection, 
+	bson_t *query, DoubleList *select,
 	uint64_t *n_docs);
+
+// correctly destroys an array of docs got from mongo_find_all ()
+extern void mongo_find_all_destroy_docs (bson_t **docs, uint64_t count);
 
 // use a query to find one doc
 // select is a dlist of strings used for document projection, _id is true by default and should not be incldued
