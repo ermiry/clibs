@@ -45,6 +45,20 @@ int split (const char *string, const char delim) {
 
 }
 
+int reverse (const char *string) {
+
+	printf ("\nreverse () - before reverse <%s>\n", string);
+
+	char *r = c_string_reverse (string);
+	if (r) {
+		printf ("\n<%s>\n", r);
+		free (r);
+	}
+
+	return 0;
+
+}
+
 int main (void) {
 
 	int errors = 0;
@@ -54,6 +68,8 @@ int main (void) {
 	errors |= count_tokens ("/api/hola/test", '/');
 
 	errors |= split ("/api/hola/test", '/');
+
+	errors |= reverse ("hola a todos");
 
 	return errors;
 
