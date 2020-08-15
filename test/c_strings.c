@@ -59,6 +59,18 @@ int reverse (const char *string) {
 
 }
 
+int starts (const char *string, const char *sub) {
+
+	if (c_string_starts_with (string, sub)) {
+		printf ("\n%s starts with %s\n", string, sub);
+	}
+
+	else printf ("\n%s DOES NOT start with %s\n", string, sub);
+
+	return 0;
+
+}
+
 int main (void) {
 
 	int errors = 0;
@@ -70,6 +82,8 @@ int main (void) {
 	errors |= split ("/api/hola/test", '/');
 
 	errors |= reverse ("hola a todos");
+
+	errors |= starts ("hola me llamo erick", "hola");
 
 	return errors;
 
