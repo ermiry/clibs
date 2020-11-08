@@ -120,15 +120,17 @@ static int test_insert_end_remove_start (void) {
 
 static int test_insert_end_remove_end (void) {
 
-	DoubleList *list = dlist_init (NULL, compare_int);
+	DoubleList *list = dlist_init (free, compare_int);
 
-	for (int i = 0; i < 101; i++) {
+	for (int i = 0; i < 100; i++) {
 		Integer *integer = (Integer *) malloc (sizeof (Integer));
 		// integer->value = rand () % 99 + 1;
 		integer->value = i;
 		dlist_insert_after (list, dlist_end (list), integer);
+	}
 
-		if (i > 1 && i < 100) dlist_remove_element (list, list->end);
+	for (int i = 0; i < 50; i++) {
+		free (dlist_remove_element (list, list->end));
 	}
 
 	printf ("\nRemaining list item: %d -- size: %ld\n", ((Integer *) list->start->data)->value, list->size);
@@ -136,6 +138,112 @@ static int test_insert_end_remove_end (void) {
 	dlist_delete (list);
 
 	return 0;
+
+}
+
+static int test_insert_and_remove (void) {
+
+	printf ("test_insert_and_remove ()\n");
+
+	DoubleList *list = dlist_init (free, compare_int);
+
+	printf ("Insert 10 numbers:\n");
+
+	Integer *integer = NULL;
+	for (int i = 0; i < 10; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		// integer->value = rand () % 99 + 1;
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	ListElement *le = NULL;
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\nRemove 5 from the end:\n");
+	for (int i = 0; i < 5; i++) {
+		free (dlist_remove_element (list, list->end));
+	}
+
+	printf ("\n\n");
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\n");
+	printf ("Remove 2 from the start:\n");
+	for (int i = 0; i < 2; i++) {
+		free (dlist_remove_start (list));
+	}
+
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+	printf ("\n\n");
+
+	printf ("Remove 2 from the start again:\n");
+	for (int i = 0; i < 2; i++) {
+		free (dlist_remove_element (list, NULL));
+	}
+
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+	printf ("\n\n");
+
+	dlist_delete (list);
+
+	printf ("----------------------------------------\n");
+
+}
+
+static int test_insert_and_remove_unsafe (void) {
+
+	printf ("test_insert_and_remove_unsafe ()\n\n");
+
+	DoubleList *list = dlist_init (free, compare_int);
+
+	printf ("Insert 10 numbers:\n");
+
+	Integer *integer = NULL;
+	for (int i = 0; i < 10; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		// integer->value = rand () % 99 + 1;
+		integer->value = i;
+		dlist_insert_at_end_unsafe (list, integer);
+	}
+
+	ListElement *le = NULL;
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\nRemove 5 from the end:\n");
+	for (int i = 0; i < 5; i++) {
+		free (dlist_remove_end_unsafe (list));
+	}
+
+	printf ("\n\n");
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\n");
+	printf ("Remove 2 from the start:\n");
+	for (int i = 0; i < 2; i++) {
+		free (dlist_remove_start_unsafe (list));
+	}
+
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+	printf ("\n\n");
+
+	dlist_delete (list);
+
+	printf ("----------------------------------------\n");
 
 }
 
@@ -720,6 +828,10 @@ int main (void) {
 
 	// res |= test_insert_end_remove_end ();
 
+	res |= test_insert_and_remove ();
+
+	res |= test_insert_and_remove_unsafe ();
+
 	// res |= test_traverse ();
 
 	// res |= test_sort ();
@@ -736,7 +848,7 @@ int main (void) {
 
 	// res |= test_clone ();
 
-	res = test_split_half ();
+	// res = test_split_half ();
 
 	return res;
 
