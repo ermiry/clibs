@@ -520,7 +520,7 @@ int dlist_insert_at_start (DoubleList *dlist, const void *data) {
 		pthread_mutex_lock (dlist->mutex);
 
 		retval = dlist_internal_insert_before (
-			dlist, dlist->start, data
+			dlist, NULL, data
 		);
 
 		pthread_mutex_unlock (dlist->mutex);
@@ -536,7 +536,7 @@ int dlist_insert_at_start (DoubleList *dlist, const void *data) {
 int dlist_insert_at_start_unsafe (DoubleList *dlist, const void *data) {
 
 	return (dlist && data) ? dlist_internal_insert_before (
-		dlist, dlist->start, data
+		dlist, NULL, data
 	) : 1;
 
 }
