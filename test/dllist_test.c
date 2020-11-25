@@ -162,12 +162,11 @@ static int test_insert_and_remove (void) {
 		printf ("%4d", ((Integer *) le->data)->value);
 	}
 
-	printf ("\nRemove 5 from the end:\n");
+	printf ("\n\nRemove 5 from the end:\n");
 	for (int i = 0; i < 5; i++) {
 		free (dlist_remove_element (list, list->end));
 	}
 
-	printf ("\n\n");
 	dlist_for_each (list, le) {
 		printf ("%4d", ((Integer *) le->data)->value);
 	}
@@ -220,12 +219,11 @@ static int test_insert_and_remove_unsafe (void) {
 		printf ("%4d", ((Integer *) le->data)->value);
 	}
 
-	printf ("\nRemove 5 from the end:\n");
+	printf ("\n\nRemove 5 from the end:\n");
 	for (int i = 0; i < 5; i++) {
 		free (dlist_remove_end_unsafe (list));
 	}
 
-	printf ("\n\n");
 	dlist_for_each (list, le) {
 		printf ("%4d", ((Integer *) le->data)->value);
 	}
@@ -808,6 +806,64 @@ static int test_split_half (void) {
 
 }
 
+static bool test_split_by_condition_condition (
+	const void *a, const void *b
+) {
+
+	Integer *integer_a = (Integer *) a;
+	Integer *integer_b = (Integer *) b;
+
+	if (integer_a->value < integer_b->value) return true;
+
+	return false;
+
+}
+
+static int test_split_by_condition (void) {
+
+	printf ("\ntest_split_by_condition ()\n");
+
+	DoubleList *list = dlist_init (free, compare_int);
+
+	printf ("Insert 10 numbers:\n");
+
+	Integer *integer = NULL;
+	for (int i = 0; i < 10; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		// integer->value = rand () % 99 + 1;
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	ListElement *le = NULL;
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	Integer match = { 5 };
+	DoubleList *matches = dlist_split_by_condition (
+		list, test_split_by_condition_condition, &match
+	);
+
+	printf ("\n\nAFTER split (size %ld):\n", list->size);
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nMatches (size: %ld):\n", matches->size);
+	dlist_for_each (matches, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\n");
+
+	dlist_delete (matches);
+	dlist_delete (list);
+
+	printf ("----------------------------------------\n");
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from test directory...
 // mkdir bin
@@ -849,6 +905,8 @@ int main (void) {
 	// res |= test_clone ();
 
 	// res = test_split_half ();
+
+	res |= test_split_by_condition ();
 
 	return res;
 
