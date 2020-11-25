@@ -30,7 +30,6 @@ static int compare_int (const void *one, const void *two) {
 
 }
 
-// 06/02/2020 -- 10:37
 static int test_insert (void) {
 
 	DoubleList *dlist = dlist_init (free, compare_int);
@@ -48,6 +47,31 @@ static int test_insert (void) {
 	}
 
 	dlist_delete (dlist);
+
+	return 0;
+
+}
+
+static int test_insert_at_start_unsafe (void) {
+
+	printf ("test_insert_at_start_unsafe ()\n");
+
+	DoubleList *dlist = dlist_init (free, compare_int);
+
+	// test insert at
+	for (unsigned int i = 0; i < 10; i++) {
+		Integer *integer = integer_new (i);
+		// dlist_insert_at_start (dlist, integer);
+		dlist_insert_at_start_unsafe (dlist, integer);
+	}
+
+	for (ListElement *le = dlist_start (dlist); le; le = le->next) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	dlist_delete (dlist);
+
+	printf ("\n\n----------------------------------------\n");
 
 	return 0;
 
@@ -196,6 +220,8 @@ static int test_insert_and_remove (void) {
 
 	printf ("----------------------------------------\n");
 
+	return 0;
+
 }
 
 static int test_insert_and_remove_unsafe (void) {
@@ -242,6 +268,8 @@ static int test_insert_and_remove_unsafe (void) {
 	dlist_delete (list);
 
 	printf ("----------------------------------------\n");
+
+	return 0;
 
 }
 
@@ -537,6 +565,81 @@ static int test_remove_at (void) {
 	}
 
 	dlist_delete (list);
+
+	return 0;
+
+}
+
+static bool test_remove_by_condition_less_than_condition (
+	const void *a, const void *b
+) {
+
+	Integer *integer_a = (Integer *) a;
+	Integer *integer_b = (Integer *) b;
+
+	if (integer_a->value < integer_b->value) return true;
+
+	return false;
+
+}
+
+static bool test_remove_by_condition_greater_than_condition (
+	const void *a, const void *b
+) {
+
+	Integer *integer_a = (Integer *) a;
+	Integer *integer_b = (Integer *) b;
+
+	if (integer_a->value > integer_b->value) return true;
+
+	return false;
+
+}
+
+static int test_remove_by_condition (void) {
+
+	printf ("\ntest_remove_by_condition ()\n");
+
+	DoubleList *list = dlist_init (free, compare_int);
+
+	printf ("Insert 10 numbers:\n");
+
+	Integer *integer = NULL;
+	for (int i = 0; i < 10; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		// integer->value = rand () % 99 + 1;
+		integer->value = i;
+		dlist_insert_after (list, dlist_end (list), integer);
+	}
+
+	ListElement *le = NULL;
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	Integer match = { 4 };
+	unsigned int matches = dlist_remove_by_condition (
+		list, test_remove_by_condition_less_than_condition, &match, true
+	);
+
+	printf ("\n\nRemoved %d elements smaller than 4:\n", matches);
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	matches = dlist_remove_by_condition (
+		list, test_remove_by_condition_greater_than_condition, &match, true
+	);
+	printf ("\n\nRemoved %d elements greater than 4:\n", matches);
+	dlist_for_each (list, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\n");
+
+	dlist_delete (list);
+
+	printf ("----------------------------------------\n");
 
 	return 0;
 
@@ -862,6 +965,8 @@ static int test_split_by_condition (void) {
 
 	printf ("----------------------------------------\n");
 
+	return 0;
+
 }
 
 // uncomment the function that represents the test you want to run and the follow these steps
@@ -878,6 +983,8 @@ int main (void) {
 
 	// res |= test_insert ();
 
+	res |= test_insert_at_start_unsafe ();
+
 	// res |= test_remove ();
 
 	// res |= test_insert_end_remove_start ();
@@ -887,6 +994,8 @@ int main (void) {
 	res |= test_insert_and_remove ();
 
 	res |= test_insert_and_remove_unsafe ();
+
+	res |= test_remove_by_condition ();
 
 	// res |= test_traverse ();
 
