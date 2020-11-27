@@ -77,6 +77,34 @@ static int test_insert_at_start_unsafe (void) {
 
 }
 
+static int test_insert_in_order (void) {
+
+	printf ("\ntest_insert_in_order ()\n");
+
+	DoubleList *dlist = dlist_init (free, compare_int);
+
+	// test insert at
+	printf ("\nInsert 100 random numbers\n");
+	Integer *integer = NULL;
+	for (unsigned int i = 0; i < 100; i++) {
+		integer = integer_new (i);
+		integer->value = rand () % 999 + 1;
+		// printf ("%d\n", integer->value);
+		dlist_insert_in_order (dlist, integer);
+	}
+
+	for (ListElement *le = dlist_start (dlist); le; le = le->next) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	dlist_delete (dlist);
+
+	printf ("\n\n----------------------------------------\n");
+
+	return 0;
+
+}
+
 static int test_remove (void) {
 
 	DoubleList *list = dlist_init (NULL, compare_int);
@@ -1116,6 +1144,8 @@ int main (void) {
 	// res |= test_insert ();
 
 	res |= test_insert_at_start_unsafe ();
+
+	res |= test_insert_in_order ();
 
 	// res |= test_remove ();
 
