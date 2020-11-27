@@ -969,6 +969,138 @@ static int test_split_by_condition (void) {
 
 }
 
+static int test_merge_two (void) {
+
+	printf ("\ntest_merge_two ()\n");
+
+	DoubleList *one = dlist_init (free, compare_int);
+	DoubleList *two = dlist_init (free, compare_int);
+
+	printf ("Insert numbers from 0 to 9 into ONE:\n");
+
+	Integer *integer = NULL;
+	for (int i = 0; i < 10; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_at_end_unsafe (one, integer);
+	}
+
+	ListElement *le = NULL;
+	dlist_for_each (one, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nInsert numbers from 10 to 19 into TWO:\n");
+	for (int i = 10; i < 20; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_at_end_unsafe (two, integer);
+	}
+
+	dlist_for_each (two, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	DoubleList *merge = dlist_merge_two (one, two);
+	printf ("\n\nMerge both lists (%ld):\n", merge->size);
+	dlist_for_each (merge, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nOne (%ld)\n", one->size);
+	printf ("Two (%ld)\n", two->size);
+
+	printf ("\n\n");
+
+	dlist_delete (merge);
+	dlist_delete (two);
+	dlist_delete (one);
+
+	printf ("----------------------------------------\n");
+
+	return 0;
+
+}
+
+static bool test_merge_by_condition_condition (
+	const void *a, const void *b
+) {
+
+	Integer *integer_a = (Integer *) a;
+	Integer *integer_b = (Integer *) b;
+
+	if (integer_a->value < integer_b->value) return true;
+
+	return false;
+
+}
+
+static int test_merge_two_by_condition (void) {
+
+	printf ("\ntest_merge_two_by_condition ()\n");
+
+	DoubleList *one = dlist_init (free, compare_int);
+	DoubleList *two = dlist_init (free, compare_int);
+
+	printf ("Insert numbers from 0 to 9 into ONE:\n");
+
+	Integer *integer = NULL;
+	for (int i = 0; i < 10; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_at_end_unsafe (one, integer);
+	}
+
+	ListElement *le = NULL;
+	dlist_for_each (one, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nInsert numbers from 0 to 9 into TWO:\n");
+	for (int i = 0; i < 10; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_at_end_unsafe (two, integer);
+	}
+
+	dlist_for_each (two, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nMerge both lists but ONLY elements < 5:\n");
+	Integer match = { 5 };
+	DoubleList *merge = dlist_merge_two_by_condition (
+		one, two,
+		test_merge_by_condition_condition, &match
+	);
+
+	printf ("One (%ld):\n", one->size);
+	dlist_for_each (one, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nTwo (%ld):\n", two->size);
+	dlist_for_each (two, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nMerge (%ld):\n", merge->size);
+	dlist_for_each (merge, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\n");
+
+	dlist_delete (merge);
+	dlist_delete (two);
+	dlist_delete (one);
+
+	printf ("----------------------------------------\n");
+
+	return 0;
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from test directory...
 // mkdir bin
@@ -1016,6 +1148,10 @@ int main (void) {
 	// res = test_split_half ();
 
 	res |= test_split_by_condition ();
+
+	res |= test_merge_two ();
+
+	res |= test_merge_two_by_condition ();
 
 	return res;
 
