@@ -1,11 +1,11 @@
-#ifndef _CERVER_THREADS_JOBS_H_
-#define _CERVER_THREADS_JOBS_H_
+#ifndef _CLIBS_THREADS_JOBS_H_
+#define _CLIBS_THREADS_JOBS_H_
 
 #include <pthread.h>
 
-#include "../collections/dllist.h"
+#include "clibs/collections/dlist.h"
 
-#include "bsem.h"
+#include "clibs/threads/bsem.h"
 
 typedef struct Job {
 
@@ -32,7 +32,7 @@ typedef struct JobQueue {
 
 	pthread_mutex_t *rwmutex;             // used for queue r/w access
 	bsem *has_jobs;
-	
+
 } JobQueue;
 
 extern JobQueue *job_queue_new (void);

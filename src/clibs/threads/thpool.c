@@ -12,9 +12,9 @@
 #include <sys/prctl.h>
 #endif
 
-#include "../../include/threads/thpool.h"
-#include "../../include/threads/bsem.h"
-#include "../../include/threads/jobs.h"
+#include "clibs/threads/thpool.h"
+#include "clibs/threads/bsem.h"
+#include "clibs/threads/jobs.h"
 
 static void *thread_do (void *thread_ptr);
 
@@ -167,7 +167,7 @@ static void *thread_do (void *thread_ptr) {
 				if (job) {
 					if (job->method)
 						job->method (job->args);
-					
+
 					job_delete (job);
 				}
 
@@ -259,7 +259,7 @@ void thpool_set_name (Thpool *thpool, const char *name) {
 		char *from = (char *) name;
 
 		while (*from) *to++ = *from++;
-    	*to = '\0';
+		*to = '\0';
 	}
 
 }
@@ -294,6 +294,40 @@ unsigned int thpool_get_num_threads_working (Thpool *thpool) {
 
 }
 
+// returns true if the thpool does NOT have any working thread
+bool thpool_is_empty (Thpool *thpool) {
+
+	bool retval = false;
+
+	if (thpool) {
+		pthread_mutex_lock (thpool->mutex);
+
+		retval = (thpool->num_threads_working == 0);
+
+		pthread_mutex_unlock (thpool->mutex);
+	}
+
+	return retval;
+
+}
+
+// returns true if the thpool has ALL its threads working
+bool thpool_is_full (Thpool *thpool) {
+
+	bool retval = false;
+
+	if (thpool) {
+		pthread_mutex_lock (thpool->mutex);
+
+		retval = (thpool->num_threads_working == thpool->num_threads_alive);
+
+		pthread_mutex_unlock (thpool->mutex);
+	}
+
+	return retval;
+
+}
+
 // adds a work to the thpool's job queue
 // it will be executed once it is the next in line and a thread is free
 int thpool_add_work (Thpool *thpool, void (*work) (void *), void *args) {
@@ -321,7 +355,7 @@ void thpool_wait (Thpool *thpool) {
 
 		pthread_mutex_unlock (thpool->mutex);
 	}
-	
+
 }
 
 // destroys the thpool and deletes all of its data
