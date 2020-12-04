@@ -1,5 +1,5 @@
-#ifndef _COLLECTIONS_DLIST_H_
-#define _COLLECTIONS_DLIST_H_
+#ifndef _CLIBS_COLLECTIONS_DLIST_H_
+#define _CLIBS_COLLECTIONS_DLIST_H_
 
 #include <stdbool.h>
 
