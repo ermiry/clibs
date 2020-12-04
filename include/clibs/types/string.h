@@ -1,10 +1,12 @@
-#ifndef _TYPES_STRING_H_
-#define _TYPES_STRING_H_
+#ifndef _CLIBS_TYPES_STRING_H_
+#define _CLIBS_TYPES_STRING_H_
+
+#include "clibs/types/types.h"
 
 typedef struct String {
 
-	unsigned int len;
-	char *str;
+    unsigned int len;
+    char *str;
 
 } String;
 
@@ -44,10 +46,10 @@ extern void str_remove_char (String *string, char garbage);
 // removes the last char from a string
 extern void str_remove_last_char (String *string);
 
-// checks if a string (to_find) is inside string
+// check if a str (to_find) is inside str
 // returns 0 on exact match
 // returns 1 if it match the letters but len is different
 // returns -1 if no match
-extern int str_contains (String *string, char *to_find);
+extern int str_contains (String *str, char *to_find);
 
 #endif

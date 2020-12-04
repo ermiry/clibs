@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#include "../../include/types/string.h"
+#include "clibs/types/string.h"
 
 static inline void char_copy (char *to, char *from) {
 
@@ -39,7 +39,6 @@ void str_delete (void *str_ptr) {
 		String *str = (String *) str_ptr;
 
 		if (str->str) free (str->str);
-
 		free (str);
 	}
 
@@ -74,13 +73,13 @@ String *str_create (const char *format, ...) {
 
 }
 
-int str_compare (const String *s1, const String *s2) { 
+int str_compare (const String *s1, const String *s2) {
 
-	if (s1 && s2) return strcmp (s1->str, s2->str); 
+	if (s1 && s2) return strcmp (s1->str, s2->str);
 	else if (s1 && !s2) return -1;
 	else if (!s1 && s2) return 1;
 	return 0;
-	
+
 }
 
 int str_comparator (const void *a, const void *b) {
@@ -121,17 +120,14 @@ String *str_concat (String *s1, String *s2) {
 
 	if (s1 && s2) {
 		des = str_new (NULL);
-		if (des) {
-			des->str = (char *) calloc (s1->len + s2->len + 1, sizeof (char));
-			if (des->str) {
-				while (*s1->str) *des->str++ = *s1->str++;
-				while (*s2->str) *des->str++ = *s2->str++;
+		des->str = (char *) calloc (s1->len + s2->len + 1, sizeof (char));
 
-				*des->str = '\0';
+		while (*s1->str) *des->str++ = *s1->str++;
+		while (*s2->str) *des->str++ = *s2->str++;
 
-				des->len = s1->len + s2->len;
-			}
-		}
+		*des->str = '\0';
+
+		des->len = s1->len + s2->len;
 	}
 
 	return des;
@@ -143,7 +139,7 @@ String *str_concat (String *s1, String *s2) {
 void str_append_char (String *s, const char c) {
 
 	if (s) {
-		unsigned int new_len = s->len + 1;   
+		unsigned int new_len = s->len + 1;
 
 		s->str = (char *) realloc (s->str, new_len);
 		if (s->str) {
@@ -189,43 +185,55 @@ char **str_split (String *str, const char delim, int *n_tokens) {
 	char **result = NULL;
 
 	if (str) {
-		char *string = strdup (str->str);
-		if (string) {
-			// count tokens
-			size_t count = 0;
-			char *temp = (char *) str->str;
-			char last = '\0';
+		if (str->len > 1) {
+			char *string = strdup (str->str);
+			if (string) {
+				size_t count = 0;
 
-			while (*temp) {
-				if (delim == *temp) {
-					if (last != delim) count++;
+				char *temp = (char *) str->str;
+				char prev = '\0';
+				char *last = NULL;
+
+				while (*temp) {
+					if (delim == *temp) {
+						if (prev != delim) count++;
+						last = temp;
+					}
+
+					prev = *temp;
+					temp++;
 				}
 
-				last = *temp;
-				temp++;
-			}
+				// don't count if the delim is the last char of the string
+				if (prev == delim) count--;
 
-			if (last == delim) count--;
+				// check if we have info between delims
+				if (str->str[0] == delim && count) count--;
 
-			result = (char **) calloc (count, sizeof (char *));
-			if (result) {
-				if (n_tokens) *n_tokens = count;
+				if (last) count += (last < temp);
 
-				size_t idx = 0;
+				if (count) {
+					result = (char **) calloc (count, sizeof (char *));
+					if (result) {
+						if (n_tokens) *n_tokens = count;
 
-				char dlm[2];
-				dlm[0] = delim;
-				dlm[1] = '\0';
+						size_t idx = 0;
 
-				char *token = NULL;
-				char *rest = string;
-				while ((token = __strtok_r (rest, dlm, &rest))) {
-					result[idx] = strdup (token);
-					idx++;
+						char dlm[2];
+						dlm[0] = delim;
+						dlm[1] = '\0';
+
+						char *token = NULL;
+						char *rest = string;
+						while ((token = __strtok_r (rest, dlm, &rest))) {
+							result[idx] = strdup (token);
+							idx++;
+						}
+					}
 				}
-			}
 
-			free (string);
+				free (string);
+			}
 		}
 	}
 
