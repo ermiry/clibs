@@ -1,5 +1,5 @@
-#ifndef _INPUT_H_
-#define _INPUT_H_
+#ifndef _CLIBS_INPUT_H_
+#define _CLIBS_INPUT_H_
 
 extern void input_clean_stdin (void);
 
