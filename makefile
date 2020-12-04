@@ -12,7 +12,7 @@ INCDIR      := include
 BUILDDIR    := objs
 TARGETDIR   := bin
 
-TESTMDIR	:= test
+TESTDIR		:= test
 TESTBUILD	:= $(TESTDIR)/objs
 TESTTARGET	:= $(TESTDIR)/bin
 
@@ -25,14 +25,14 @@ LIB         := $(PTHREAD) $(MATH)
 INC         := -I $(INCDIR) -I /usr/local/include
 INCDEP      := -I $(INCDIR)
 
-TESTFLAGS	:= -g $(DEFINES) -Wall -Wno-unknown-pragmas
-TESTLIBS	:= -L ./bin -l clibs
+TESTFLAGS	:= -g $(DEFINES) -Wno-unknown-pragmas
+TESTLIBS	:= $(LIB) -L ./bin -l clibs
 
 SOURCES     := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS     := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.$(OBJEXT)))
 
-TESTMPLES	:= $(shell find $(TESTMDIR) -type f -name *.$(SRCEXT))
-TESTOBJS	:= $(patsubst $(TESTMDIR)/%,$(TESTBUILD)/%,$(TESTMPLES:.$(SRCEXT)=.$(OBJEXT)))
+TESTMPLES	:= $(shell find $(TESTDIR) -type f -name *.$(SRCEXT))
+TESTOBJS	:= $(patsubst $(TESTDIR)/%,$(TESTBUILD)/%,$(TESTMPLES:.$(SRCEXT)=.$(OBJEXT)))
 
 all: directories $(SLIB)
 
@@ -71,14 +71,19 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@rm -f $(BUILDDIR)/$*.$(DEPEXT).tmp
 
 test: $(TESTOBJS)
-	@mkdir -p ./test/bin
-	$(CC) -I ./$(INCDIR) -L ./$(TARGETDIR) ./$(TESTBUILD)/test.o -o ./$(TESTTARGET)/test -l clibs
+	@mkdir -p ./$(TESTTARGET)
+	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/avl_test.o ./$(TESTBUILD)/user.o $(LIB) -L ./$(TARGETDIR) -l clibs -o ./$(TESTTARGET)/avl_test
+	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/c_strings.o $(LIB) -L ./$(TARGETDIR) -l clibs -o ./$(TESTTARGET)/c_strings
+	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/dlist_test.o $(LIB) -L ./$(TARGETDIR) -l clibs -o ./$(TESTTARGET)/dlist_test
+	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/htab_test.o $(LIB) -L ./$(TARGETDIR) -l clibs -o ./$(TESTTARGET)/htab_test
+	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/queue_test.o $(LIB) -L ./$(TARGETDIR) -l clibs -o ./$(TESTTARGET)/queue_test
+	$(CC) $(DEVELOPMENT) $(INC) ./$(TESTBUILD)/thpool_test.o $(LIB) -L ./$(TARGETDIR) -l clibs -o ./$(TESTTARGET)/thpool_test
 
 # compile tests
-$(TESTBUILD)/%.$(OBJEXT): $(TESTMDIR)/%.$(SRCEXT)
+$(TESTBUILD)/%.$(OBJEXT): $(TESTDIR)/%.$(SRCEXT)
 	@mkdir -p $(dir $@)
 	$(CC) $(TESTFLAGS) $(INC) $(TESTLIBS) -c -o $@ $<
-	@$(CC) $(TESTFLAGS) $(INCDEP) -MM $(TESTMDIR)/$*.$(SRCEXT) > $(TESTBUILD)/$*.$(DEPEXT)
+	@$(CC) $(TESTFLAGS) $(INCDEP) -MM $(TESTDIR)/$*.$(SRCEXT) > $(TESTBUILD)/$*.$(DEPEXT)
 	@cp -f $(TESTBUILD)/$*.$(DEPEXT) $(TESTBUILD)/$*.$(DEPEXT).tmp
 	@sed -e 's|.*:|$(TESTBUILD)/$*.$(OBJEXT):|' < $(TESTBUILD)/$*.$(DEPEXT).tmp > $(TESTBUILD)/$*.$(DEPEXT)
 	@sed -e 's/.*://' -e 's/\\$$//' < $(TESTBUILD)/$*.$(DEPEXT).tmp | fmt -1 | sed -e 's/^ *//' -e 's/$$/:/' >> $(TESTBUILD)/$*.$(DEPEXT)
