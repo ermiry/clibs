@@ -1029,9 +1029,9 @@ static int test_merge_two (void) {
 		printf ("%4d", ((Integer *) le->data)->value);
 	}
 
-	DoubleList *merge = dlist_merge_two (one, two);
-	printf ("\n\nMerge both lists (%ld):\n", merge->size);
-	dlist_for_each (merge, le) {
+	dlist_merge_two (one, two);
+	printf ("\n\nMerge both lists (%ld):\n", one->size);
+	dlist_for_each (one, le) {
 		printf ("%4d", ((Integer *) le->data)->value);
 	}
 
@@ -1040,7 +1040,6 @@ static int test_merge_two (void) {
 
 	printf ("\n\n");
 
-	dlist_delete (merge);
 	dlist_delete (two);
 	dlist_delete (one);
 
@@ -1129,6 +1128,99 @@ static int test_merge_two_by_condition (void) {
 
 }
 
+static int test_merge_many (void) {
+
+	printf ("\ntest_merge_many ()\n");
+
+	DoubleList *one = dlist_init (free, compare_int);
+	DoubleList *two = dlist_init (free, compare_int);
+	DoubleList *three = dlist_init (free, compare_int);
+	DoubleList *four = dlist_init (free, compare_int);
+
+	printf ("Insert numbers from 0 to 9 into ONE:\n");
+
+	Integer *integer = NULL;
+	for (int i = 0; i < 10; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_at_end_unsafe (one, integer);
+	}
+
+	ListElement *le = NULL;
+	dlist_for_each (one, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nInsert numbers from 10 to 19 into TWO:\n");
+	for (int i = 10; i < 20; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_at_end_unsafe (two, integer);
+	}
+
+	dlist_for_each (two, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nInsert numbers from 20 to 29 into THREE:\n");
+
+	integer = NULL;
+	for (int i = 20; i < 30; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_at_end_unsafe (three, integer);
+	}
+
+	le = NULL;
+	dlist_for_each (three, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nInsert numbers from 30 to 39 into FOUR:\n");
+
+	integer = NULL;
+	for (int i = 30; i < 40; i++) {
+		integer = (Integer *) malloc (sizeof (Integer));
+		integer->value = i;
+		dlist_insert_at_end_unsafe (four, integer);
+	}
+
+	le = NULL;
+	dlist_for_each (four, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nCreating many dlists...\n");
+
+	DoubleList *many = dlist_init (dlist_delete, NULL);
+	dlist_insert_at_end_unsafe (many, one);
+	dlist_insert_at_end_unsafe (many, two);
+	dlist_insert_at_end_unsafe (many, three);
+	dlist_insert_at_end_unsafe (many, four);
+
+	DoubleList *merge = dlist_merge_many (many);
+	printf ("Merge all lists:\n");
+	dlist_for_each (merge, le) {
+		printf ("%4d", ((Integer *) le->data)->value);
+	}
+
+	printf ("\n\nMerge (%ld)\n", merge->size);
+	printf ("One (%ld)\n", one->size);
+	printf ("Two (%ld)\n", two->size);
+	printf ("Three (%ld)\n", three->size);
+	printf ("Four (%ld)\n", four->size);
+
+	printf ("\n\n");
+
+	dlist_delete (merge);
+	dlist_delete (many);
+
+	printf ("----------------------------------------\n");
+
+	return 0;
+
+}
+
 // uncomment the function that represents the test you want to run and the follow these steps
 // from test directory...
 // mkdir bin
@@ -1182,6 +1274,8 @@ int main (void) {
 	res |= test_merge_two ();
 
 	res |= test_merge_two_by_condition ();
+
+	res |= test_merge_many ();
 
 	return res;
 
