@@ -5,7 +5,7 @@
 
 #include <pthread.h>
 
-#include "../include/collections/dllist.h"
+#include <clibs/collections/dlist.h>
 
 typedef struct { int value; } Integer;
 
@@ -136,7 +136,7 @@ static int test_remove (void) {
 	// 	Integer *integer = (Integer *) le->data;
 	// 	printf ("%3i", integer->value);
 	// }
-	
+
 	dlist_delete (list);
 
 	return 0;
@@ -159,7 +159,7 @@ static int test_insert_end_remove_start (void) {
 
 			free (dlist_remove (list, query, NULL));
 			// free (dlist_remove_element (list, NULL));
-		} 
+		}
 	}
 
 	printf ("\nRemaining list item: %d -- size: %ld\n", ((Integer *) list->start->data)->value, list->size);
@@ -367,7 +367,7 @@ static int test_sort (void) {
 		Integer *integer = (Integer *) le->data;
 		printf ("%3i", integer->value);
 	}
-	
+
 	dlist_delete (list);
 
 	return 0;

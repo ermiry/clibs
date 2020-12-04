@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/utils/utils.h"
+#include <clibs/utils/utils.h>
 
 int count_tokens (const char *string, const char delim) {
 

@@ -5,7 +5,7 @@
 #include <time.h>
 #include <pthread.h>
 
-#include "../include/collections/avl.h"
+#include <clibs/collections/avl.h>
 
 #include "user.h"
 
@@ -85,6 +85,8 @@ static int compare_int (const void *one, const void *two) {
 		else return 1;
 	}
 
+	return 0;
+
 }
 
 static int print_count = 0;
@@ -156,6 +158,8 @@ static void *test_thread_add (void *args) {
 		}
 	}
 
+	return NULL;
+
 }
 
 static unsigned int test_thread_remove_count = 1;
@@ -180,6 +184,8 @@ static void *test_thread_remove (void *args) {
 			free (integer);
 		}
 	}
+
+	return NULL;
 
 }
 
