@@ -1,7 +1,11 @@
-#ifndef _CLIBS_TYPES_STRING_H_
-#define _CLIBS_TYPES_STRING_H_
+#ifndef _CLIBS_STRING_H_
+#define _CLIBS_STRING_H_
 
 #include "clibs/types/types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct String {
 
@@ -39,7 +43,9 @@ extern void str_to_upper (String *string);
 
 extern void str_to_lower (String *string);
 
-extern char **str_split (String *string, const char delim, int *n_tokens);
+extern char **str_split (
+    String *string, const char delim, int *n_tokens
+);
 
 extern void str_remove_char (String *string, char garbage);
 
@@ -51,5 +57,9 @@ extern void str_remove_last_char (String *string);
 // returns 1 if it match the letters but len is different
 // returns -1 if no match
 extern int str_contains (String *str, char *to_find);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
