@@ -7,6 +7,10 @@
 
 #include "clibs/threads/bsem.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct Job {
 
 	// struct Job *prev;
@@ -19,7 +23,9 @@ extern Job *job_new (void);
 
 extern void job_delete (void *job_ptr);
 
-extern Job *job_create (void (*method) (void *args), void *args);
+extern Job *job_create (
+	void (*method) (void *args), void *args
+);
 
 typedef struct JobQueue {
 
@@ -50,5 +56,9 @@ extern Job *job_queue_pull (JobQueue *job_queue);
 
 // clears the job queue -> destroys all jobs
 extern void job_queue_clear (JobQueue *job_queue);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
