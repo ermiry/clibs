@@ -10,6 +10,10 @@
 
 #include "clibs/collections/dlist.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // sanitizes a filename to correctly be used to save a file
 // removes every character & whitespaces except for
 // alphabet, numbers, '-', '_' and  '.'
@@ -54,5 +58,9 @@ extern char *file_read (
 extern int file_open_as_fd (
 	const char *filename, struct stat *filestatus, int flags
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
