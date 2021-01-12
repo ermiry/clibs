@@ -9,6 +9,10 @@
 
 #define HTAB_DEFAULT_INIT_SIZE				32
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct HtabNode {
 
 	struct HtabNode *next;
@@ -33,12 +37,16 @@ typedef struct Htab {
 	size_t size;
 	size_t count;
 
-	size_t (*hash)(const void *key, size_t key_size, size_t table_size);
+	size_t (*hash)(
+		const void *key, size_t key_size, size_t table_size
+	);
 
 	// int (*compare)(const void *k1, size_t s1, const void *k2, size_t s2);
 	void *(*key_create)(const void *);
 	void (*key_delete)(void *);
-	int (*key_compare)(const void *one, const void *two);
+	int (*key_compare)(
+		const void *one, const void *two
+	);
 
 	// method to delete the data
 	void (*delete_data)(void *data);
@@ -65,7 +73,7 @@ extern void htab_set_key_delete (
 // usefull if you want to compare your keys (data) by specific fields
 // if not set, a generic method will be used instead
 extern void htab_set_key_comparator (
-	Htab *htab,
+	Htab *htab, 
 	int (*key_compare)(const void *one, const void *two)
 );
 
@@ -97,8 +105,8 @@ extern bool htab_contains_key (
 // inserts a new value to the htab associated with its key
 // returns 0 on success, 1 on error
 extern int htab_insert (
-	Htab *ht,
-	const void *key, size_t key_size,
+	Htab *ht, 
+	const void *key, size_t key_size, 
 	void *val, size_t val_size
 );
 
@@ -108,7 +116,9 @@ extern void *htab_get (
 	Htab *ht, const void *key, size_t key_size
 );
 
-// removes the data associated with the key from the htab
+// removes and returns the data associated with the key from the htab
+// the data should be deleted by the user
+// returns NULL if no data was found with the provided key
 extern void *htab_remove (
 	Htab *ht, const void *key, size_t key_size
 );
@@ -120,5 +130,9 @@ extern void htab_destroy (Htab *ht);
 // currently only works if both keys and values are int
 // used for debugging and testing
 extern void htab_print (Htab *htab);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
