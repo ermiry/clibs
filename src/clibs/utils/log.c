@@ -37,7 +37,7 @@ static const char *log_get_msg_type (LogType type) {
 
 #pragma region configuration
 
-static LogOutputType log_output_type = LOG_OUTPUT_TYPE_STD;
+static LogOutputType log_global_output_type = LOG_OUTPUT_TYPE_STD;
 
 static LogTimeType log_time_type = LOG_TIME_TYPE_NONE;
 static bool use_local_time = false;
@@ -49,17 +49,19 @@ static pthread_t update_log_thread_id = 0;
 static bool update_log_file = false;
 static unsigned int log_file_update_interval = LOG_DEFAULT_UPDATE_INTERVAL;
 
+static bool quiet = false;
+
 // returns the current log output type
 LogOutputType clibs_log_get_output_type (void) {
 
-	return log_output_type;
+	return log_global_output_type;
 
 }
 
 // sets the log output type to use
 void clibs_log_set_output_type (LogOutputType type) {
 
-	log_output_type = type;
+	log_global_output_type = type;
 
 }
 
@@ -139,6 +141,11 @@ void clibs_log_set_time_config (LogTimeType type) {
 // set if logs datetimes will use local time or not
 void clibs_log_set_local_time (bool value) { use_local_time = value; }
 
+// if the log's quiet option is set to TRUE,
+// only success, warning & error messages will be handled
+// any other type will be ignored
+void clibs_log_set_quiet (bool value) { quiet = value; }
+
 #pragma endregion
 
 #pragma region internal
@@ -153,17 +160,17 @@ typedef struct {
 
 	char message[LOG_MESSAGE_SIZE];
 
-} ClibsLog;
+} CLibsLog;
 
 static void *clibs_log_new (void) {
 
-	ClibsLog *log = (ClibsLog *) malloc (sizeof (ClibsLog));
+	CLibsLog *log = (CLibsLog *) malloc (sizeof (CLibsLog));
 	if (log) {
-		memset (log->datetime, 0, LOG_DATETIME_SIZE);
-		memset (log->header, 0, LOG_HEADER_SIZE);
+		(void) memset (log->datetime, 0, LOG_DATETIME_SIZE);
+		(void) memset (log->header, 0, LOG_HEADER_SIZE);
 		log->second = log->header + LOG_HEADER_HALF_SIZE;
 
-		memset (log->message, 0, LOG_MESSAGE_SIZE);
+		(void) memset (log->message, 0, LOG_MESSAGE_SIZE);
 	}
 
 	return log;
@@ -177,7 +184,7 @@ static void clibs_log_delete (void *clibs_log_ptr) {
 }
 
 static void clibs_log_header_create (
-	ClibsLog *log,
+	CLibsLog *log,
 	LogType first_type, LogType second_type
 ) {
 
@@ -188,23 +195,23 @@ static void clibs_log_header_create (
 			case LOG_TYPE_TEST: {
 				// first type
 				(void) snprintf (
-					log->header, LOG_HEADER_HALF_SIZE, 
-					"%s", 
+					log->header, LOG_HEADER_HALF_SIZE,
+					"%s",
 					first
 				);
 
 				// second type
 				(void) snprintf (
-					log->second, LOG_HEADER_HALF_SIZE, 
-					"%s", 
+					log->second, LOG_HEADER_HALF_SIZE,
+					"%s",
 					log_get_msg_type (second_type)
 				);
 			} break;
 
 			default: {
 				(void) snprintf (
-					log->header, LOG_HEADER_SIZE, 
-					"%s%s", 
+					log->header, LOG_HEADER_SIZE,
+					"%s%s",
 					first, log_get_msg_type (second_type)
 				);
 			} break;
@@ -242,68 +249,69 @@ static FILE *clibs_log_get_stream (LogType first_type) {
 }
 
 static void clibs_log_internal_normal_std (
-	ClibsLog *log,
+	CLibsLog *log,
 	LogType first_type, LogType second_type
 ) {
 
 	switch (first_type) {
-		case LOG_TYPE_NONE: fprintf (stdout, "%s\n", log->message); break;
+		case LOG_TYPE_NONE: (void) fprintf (stdout, "%s\n", log->message); break;
 
-		case LOG_TYPE_ERROR: fprintf (stderr, LOG_COLOR_RED "%s: %s\n" LOG_COLOR_RESET, log->header, log->message); break;
-		case LOG_TYPE_WARNING: fprintf (stderr, LOG_COLOR_YELLOW "%s: %s\n" LOG_COLOR_RESET, log->header, log->message); break;
-		case LOG_TYPE_SUCCESS: fprintf (stdout, LOG_COLOR_GREEN "%s: %s\n" LOG_COLOR_RESET, log->header, log->message); break;
+		case LOG_TYPE_ERROR: (void) fprintf (stderr, LOG_COLOR_RED "%s: %s\n" LOG_COLOR_RESET, log->header, log->message); break;
+		case LOG_TYPE_WARNING: (void) fprintf (stderr, LOG_COLOR_YELLOW "%s: %s\n" LOG_COLOR_RESET, log->header, log->message); break;
+		case LOG_TYPE_SUCCESS: (void) fprintf (stdout, LOG_COLOR_GREEN "%s: %s\n" LOG_COLOR_RESET, log->header, log->message); break;
 
 		case LOG_TYPE_DEBUG: {
 			if (second_type != LOG_TYPE_NONE)
-				fprintf (stdout, LOG_COLOR_MAGENTA "%s" LOG_COLOR_RESET "%s: %s\n", log->header, log->second, log->message);
+				(void) fprintf (stdout, LOG_COLOR_MAGENTA "%s" LOG_COLOR_RESET "%s: %s\n", log->header, log->second, log->message);
 
-			else fprintf (stdout, LOG_COLOR_MAGENTA "%s: " LOG_COLOR_RESET "%s\n", log->header, log->message);
+			else (void) fprintf (stdout, LOG_COLOR_MAGENTA "%s: " LOG_COLOR_RESET "%s\n", log->header, log->message);
 		} break;
-		
+
 		case LOG_TYPE_TEST: {
 			if (second_type != LOG_TYPE_NONE)
-				fprintf (stdout, LOG_COLOR_CYAN "%s" LOG_COLOR_RESET "%s: %s\n", log->header, log->second, log->message);
+				(void) fprintf (stdout, LOG_COLOR_CYAN "%s" LOG_COLOR_RESET "%s: %s\n", log->header, log->second, log->message);
 
-			else fprintf (stdout, LOG_COLOR_CYAN "%s: " LOG_COLOR_RESET "%s\n", log->header, log->message);
+			else (void) fprintf (stdout, LOG_COLOR_CYAN "%s: " LOG_COLOR_RESET "%s\n", log->header, log->message);
 		} break;
 
-		default: fprintf (stdout, "%s: %s\n", log->header, log->message); break;
+		default: (void) fprintf (stdout, "%s: %s\n", log->header, log->message); break;
 	}
 
 }
 
 static void clibs_log_internal_normal_file (
 	FILE *__restrict __stream,
-	ClibsLog *log,
+	CLibsLog *log,
 	LogType first_type, LogType second_type
 ) {
 
 	switch (first_type) {
-		case LOG_TYPE_NONE: fprintf (__stream, "%s\n", log->message); break;
+		case LOG_TYPE_NONE: (void) fprintf (__stream, "%s\n", log->message); break;
 
-		case LOG_TYPE_ERROR: fprintf (__stream, "%s: %s\n", log->header, log->message); break;
-		case LOG_TYPE_WARNING: fprintf (__stream, "%s: %s\n", log->header, log->message); break;
-		case LOG_TYPE_SUCCESS: fprintf (__stream, "%s: %s\n", log->header, log->message); break;
+		case LOG_TYPE_ERROR: (void) fprintf (__stream, "%s: %s\n", log->header, log->message); break;
+		case LOG_TYPE_WARNING: (void) fprintf (__stream, "%s: %s\n", log->header, log->message); break;
+		case LOG_TYPE_SUCCESS: (void) fprintf (__stream, "%s: %s\n", log->header, log->message); break;
 
 		case LOG_TYPE_DEBUG: {
-			if (second_type != LOG_TYPE_NONE) fprintf (__stream, "%s%s: %s\n", log->header, log->second, log->message);
-			else fprintf (__stream,  "%s: %s\n", log->header, log->message);
-		} break;
-		
-		case LOG_TYPE_TEST: {
-			if (second_type != LOG_TYPE_NONE) fprintf (__stream, "%s%s: %s\n", log->header, log->second, log->message);
-			else fprintf (__stream, "%s: %s\n", log->header, log->message);
+			if (second_type != LOG_TYPE_NONE) (void) fprintf (__stream, "%s%s: %s\n", log->header, log->second, log->message);
+			else (void) fprintf (__stream,  "%s: %s\n", log->header, log->message);
 		} break;
 
-		default: fprintf (__stream, "%s: %s\n", log->header, log->message); break;
+		case LOG_TYPE_TEST: {
+			if (second_type != LOG_TYPE_NONE) (void) fprintf (__stream, "%s%s: %s\n", log->header, log->second, log->message);
+			else (void) fprintf (__stream, "%s: %s\n", log->header, log->message);
+		} break;
+
+		default: (void) fprintf (__stream, "%s: %s\n", log->header, log->message); break;
 	}
 
 }
 
 static void clibs_log_internal_normal (
 	FILE *__restrict __stream,
-	ClibsLog *log,
-	LogType first_type, LogType second_type
+	CLibsLog *log,
+	LogType first_type, LogType second_type,
+	LogOutputType log_output_type
 ) {
 
 	switch (log_output_type) {
@@ -321,73 +329,86 @@ static void clibs_log_internal_normal (
 }
 
 static void clibs_log_internal_with_time_std (
-	ClibsLog *log,
+	CLibsLog *log,
 	LogType first_type, LogType second_type
 ) {
 
 	switch (first_type) {
-		case LOG_TYPE_NONE: fprintf (stdout, "[%s]: %s\n", log->datetime, log->message); break;
+		case LOG_TYPE_NONE: (void) fprintf (stdout, "[%s]: %s\n", log->datetime, log->message); break;
 
-		case LOG_TYPE_ERROR: fprintf (stderr, "[%s]" LOG_COLOR_RED "%s: %s\n" LOG_COLOR_RESET, log->datetime, log->header, log->message); break;
-		case LOG_TYPE_WARNING: fprintf (stderr, "[%s]" LOG_COLOR_YELLOW "%s: %s\n" LOG_COLOR_RESET, log->datetime, log->header, log->message); break;
-		case LOG_TYPE_SUCCESS: fprintf (stdout, "[%s]" LOG_COLOR_GREEN "%s: %s\n" LOG_COLOR_RESET, log->datetime, log->header, log->message); break;
+		case LOG_TYPE_ERROR: (void) fprintf (stderr, "[%s]" LOG_COLOR_RED "%s: %s\n" LOG_COLOR_RESET, log->datetime, log->header, log->message); break;
+		case LOG_TYPE_WARNING: (void) fprintf (stderr, "[%s]" LOG_COLOR_YELLOW "%s: %s\n" LOG_COLOR_RESET, log->datetime, log->header, log->message); break;
+		case LOG_TYPE_SUCCESS: (void) fprintf (stdout, "[%s]" LOG_COLOR_GREEN "%s: %s\n" LOG_COLOR_RESET, log->datetime, log->header, log->message); break;
 
 		case LOG_TYPE_DEBUG: {
 			if (second_type != LOG_TYPE_NONE)
-				fprintf (stdout, "[%s]" LOG_COLOR_MAGENTA "%s" LOG_COLOR_RESET "%s: %s\n", log->datetime, log->header, log->second, log->message);
+				(void) fprintf (stdout, "[%s]" LOG_COLOR_MAGENTA "%s" LOG_COLOR_RESET "%s: %s\n", log->datetime, log->header, log->second, log->message);
 
-			else fprintf (stdout, "[%s]" LOG_COLOR_MAGENTA "%s: " LOG_COLOR_RESET "%s\n", log->datetime, log->header, log->message);
+			else (void) fprintf (stdout, "[%s]" LOG_COLOR_MAGENTA "%s: " LOG_COLOR_RESET "%s\n", log->datetime, log->header, log->message);
 		} break;
-		
+
 		case LOG_TYPE_TEST: {
 			if (second_type != LOG_TYPE_NONE)
-				fprintf (stdout, "[%s]" LOG_COLOR_CYAN "%s" LOG_COLOR_RESET "%s: %s\n", log->datetime, log->header, log->second, log->message);
+				(void) fprintf (stdout, "[%s]" LOG_COLOR_CYAN "%s" LOG_COLOR_RESET "%s: %s\n", log->datetime, log->header, log->second, log->message);
 
-			else fprintf (stdout, "[%s]" LOG_COLOR_CYAN "%s: " LOG_COLOR_RESET "%s\n", log->datetime, log->header, log->message);
+			else (void) fprintf (stdout, "[%s]" LOG_COLOR_CYAN "%s: " LOG_COLOR_RESET "%s\n", log->datetime, log->header, log->message);
 		} break;
 
-		default: fprintf (stdout, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
+		default: (void) fprintf (stdout, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
 	}
 
 }
 
 static void clibs_log_internal_with_time_file (
 	FILE *__restrict __stream,
-	ClibsLog *log,
+	CLibsLog *log,
 	LogType first_type, LogType second_type
 ) {
 
 	switch (first_type) {
-		case LOG_TYPE_NONE: fprintf (__stream, "[%s]: %s\n", log->datetime, log->message); break;
+		case LOG_TYPE_NONE: (void) fprintf (__stream, "[%s]: %s\n", log->datetime, log->message); break;
 
-		case LOG_TYPE_ERROR: fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
-		case LOG_TYPE_WARNING: fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
-		case LOG_TYPE_SUCCESS: fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
+		case LOG_TYPE_ERROR: (void) fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
+		case LOG_TYPE_WARNING: (void) fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
+		case LOG_TYPE_SUCCESS: (void) fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
 
 		case LOG_TYPE_DEBUG: {
 			if (second_type != LOG_TYPE_NONE)
-				fprintf (__stream, "[%s]%s%s: %s\n", log->datetime, log->header, log->second, log->message);
+				(void) fprintf (__stream, "[%s]%s%s: %s\n", log->datetime, log->header, log->second, log->message);
 
-			else fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message);
+			else (void) fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message);
 		} break;
-		
+
 		case LOG_TYPE_TEST: {
 			if (second_type != LOG_TYPE_NONE)
-				fprintf (__stream, "[%s]%s%s: %s\n", log->datetime, log->header, log->second, log->message);
+				(void) fprintf (__stream, "[%s]%s%s: %s\n", log->datetime, log->header, log->second, log->message);
 
-			else fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message);
+			else (void) fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message);
 		} break;
 
-		default: fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
+		default: (void) fprintf (__stream, "[%s]%s: %s\n", log->datetime, log->header, log->message); break;
 	}
 
 }
 
-static void clibs_log_internal_with_time (
+static void clibs_log_internal_with_time_actual (
 	FILE *__restrict __stream,
-	ClibsLog *log,
-	LogType first_type, LogType second_type
+	CLibsLog *log,
+	LogType first_type, LogType second_type,
+	LogTimeType log_time_type,
+	LogOutputType log_output_type
 ) {
+
+	time_t datetime = time (NULL);
+	struct tm *timeinfo = use_local_time ? localtime (&datetime) : gmtime (&datetime);
+
+	switch (log_time_type) {
+		case LOG_TIME_TYPE_TIME: (void) strftime (log->datetime, LOG_DATETIME_SIZE, "%T", timeinfo); break;
+		case LOG_TIME_TYPE_DATE: (void) strftime (log->datetime, LOG_DATETIME_SIZE, "%d/%m/%y", timeinfo); break;
+		case LOG_TIME_TYPE_BOTH: (void) strftime (log->datetime, LOG_DATETIME_SIZE, "%d/%m/%y - %T", timeinfo); break;
+
+		default: break;
+	}
 
 	switch (log_output_type) {
 		case LOG_OUTPUT_TYPE_STD: clibs_log_internal_with_time_std (log, first_type, second_type); break;
@@ -406,34 +427,82 @@ static void clibs_log_internal_with_time (
 static void clibs_log_internal (
 	FILE *__restrict __stream,
 	LogType first_type, LogType second_type,
-	const char *format, va_list args
+	const char *format, va_list args,
+	LogOutputType log_output_type
 ) {
 
-	ClibsLog *log = (ClibsLog *) pool_pop (log_pool);
+	CLibsLog *log = (CLibsLog *) pool_pop (log_pool);
 	if (log) {
 		if (first_type != LOG_TYPE_NONE) clibs_log_header_create (log, first_type, second_type);
 		(void) vsnprintf (log->message, LOG_MESSAGE_SIZE, format, args);
 
 		if (log_time_type != LOG_TIME_TYPE_NONE) {
-			time_t datetime = time (NULL);
-			struct tm *timeinfo = use_local_time ? localtime (&datetime) : gmtime (&datetime);
-
-			switch (log_time_type) {
-				case LOG_TIME_TYPE_TIME: strftime (log->datetime, LOG_DATETIME_SIZE, "%T", timeinfo); break;
-				case LOG_TIME_TYPE_DATE: strftime (log->datetime, LOG_DATETIME_SIZE, "%d/%m/%y", timeinfo); break;
-				case LOG_TIME_TYPE_BOTH: strftime (log->datetime, LOG_DATETIME_SIZE, "%d/%m/%y - %T", timeinfo); break;
-
-				default: break;
-			}
-
-			clibs_log_internal_with_time (__stream, log, first_type, second_type);
+			clibs_log_internal_with_time_actual (
+				__stream, log,
+				first_type, second_type,
+				log_time_type, log_output_type
+			);
 		}
 
 		else {
-			clibs_log_internal_normal (__stream, log, first_type, second_type);
+			clibs_log_internal_normal (
+				__stream, log,
+				first_type, second_type,
+				log_output_type
+			);
 		}
 
-		pool_push (log_pool, log);
+		(void) pool_push (log_pool, log);
+	}
+
+}
+
+static void clibs_log_internal_with_time (
+	FILE *__restrict __stream,
+	LogType first_type, LogType second_type,
+	const char *format, va_list args,
+	LogOutputType log_output_type
+) {
+
+	CLibsLog *log = (CLibsLog *) pool_pop (log_pool);
+	if (log) {
+		if (first_type != LOG_TYPE_NONE) clibs_log_header_create (log, first_type, second_type);
+		(void) vsnprintf (log->message, LOG_MESSAGE_SIZE, format, args);
+
+		clibs_log_internal_with_time_actual (
+			__stream, log,
+			first_type, second_type,
+			LOG_TIME_TYPE_BOTH, log_output_type
+		);
+
+		(void) pool_push (log_pool, log);
+	}
+
+}
+
+static void clibs_log_internal_raw (
+	FILE *__restrict __stream,
+	const char *format, va_list args,
+	LogOutputType log_output_type
+) {
+
+	CLibsLog *log = (CLibsLog *) pool_pop (log_pool);
+	if (log) {
+		(void) vsnprintf (log->message, LOG_MESSAGE_SIZE, format, args);
+
+		switch (log_output_type) {
+			case LOG_OUTPUT_TYPE_STD: (void) fprintf (stdout, "%s", log->message); break;
+			case LOG_OUTPUT_TYPE_FILE: (void) fprintf (__stream, "%s", log->message); break;
+
+			case LOG_OUTPUT_TYPE_BOTH: {
+				(void) fprintf (stdout, "%s", log->message);
+				(void) fprintf (__stream, "%s", log->message);
+			} break;
+
+			default: break;
+		}
+
+		(void) pool_push (log_pool, log);
 	}
 
 }
@@ -453,10 +522,96 @@ void clibs_log (
 		va_list args;
 		va_start (args, format);
 
+		if (quiet) {
+			switch (first_type) {
+				case LOG_TYPE_ERROR:
+				case LOG_TYPE_WARNING:
+				case LOG_TYPE_SUCCESS:
+					clibs_log_internal (
+						clibs_log_get_stream (first_type),
+						first_type, second_type,
+						format, args,
+						log_global_output_type
+					);
+					break;
+
+				default: break;
+			}
+		}
+
+		else {
+			clibs_log_internal (
+				clibs_log_get_stream (first_type),
+				first_type, second_type,
+				format, args,
+				log_global_output_type
+			);
+		}
+
+		va_end (args);
+	}
+
+}
+
+// creates and prints a message of custom types
+// and adds the date & time
+// if the log_time_type has been configured, it will be kept
+void clibs_log_with_date (
+	LogType first_type, LogType second_type,
+	const char *format, ...
+) {
+
+	va_list args;
+		va_start (args, format);
+
+		if (quiet) {
+			switch (first_type) {
+				case LOG_TYPE_ERROR:
+				case LOG_TYPE_WARNING:
+				case LOG_TYPE_SUCCESS:
+					clibs_log_internal_with_time (
+						clibs_log_get_stream (first_type),
+						first_type, second_type,
+						format, args,
+						log_global_output_type
+					);
+					break;
+
+				default: break;
+			}
+		}
+
+		else {
+			clibs_log_internal_with_time (
+				clibs_log_get_stream (first_type),
+				first_type, second_type,
+				format, args,
+				log_global_output_type
+			);
+		}
+
+		va_end (args);
+
+}
+
+// creates and prints a message of custom types
+// to stdout or stderr based on type
+// and to log file if available
+// this messages ignore the quiet flag
+void clibs_log_both (
+	LogType first_type, LogType second_type,
+	const char *format, ...
+) {
+
+	if (format) {
+		va_list args;
+		va_start (args, format);
+
 		clibs_log_internal (
 			clibs_log_get_stream (first_type),
 			first_type, second_type,
-			format, args
+			format, args,
+			logfile ? LOG_OUTPUT_TYPE_BOTH : LOG_OUTPUT_TYPE_STD
 		);
 
 		va_end (args);
@@ -467,14 +622,15 @@ void clibs_log (
 // prints a message with no type, effectively making this a custom printf ()
 void clibs_log_msg (const char *msg, ...) {
 
-	if (msg) {
+	if (msg && !quiet) {
 		va_list args;
 		va_start (args, msg);
 
 		clibs_log_internal (
 			clibs_log_get_stream (LOG_TYPE_NONE),
 			LOG_TYPE_NONE, LOG_TYPE_NONE,
-			msg, args
+			msg, args,
+			log_global_output_type
 		);
 
 		va_end (args);
@@ -492,7 +648,8 @@ void clibs_log_error (const char *msg, ...) {
 		clibs_log_internal (
 			clibs_log_get_stream (LOG_TYPE_ERROR),
 			LOG_TYPE_ERROR, LOG_TYPE_NONE,
-			msg, args
+			msg, args,
+			log_global_output_type
 		);
 
 		va_end (args);
@@ -510,7 +667,8 @@ void clibs_log_warning (const char *msg, ...) {
 		clibs_log_internal (
 			clibs_log_get_stream (LOG_TYPE_WARNING),
 			LOG_TYPE_WARNING, LOG_TYPE_NONE,
-			msg, args
+			msg, args,
+			log_global_output_type
 		);
 
 		va_end (args);
@@ -528,7 +686,8 @@ void clibs_log_success (const char *msg, ...) {
 		clibs_log_internal (
 			clibs_log_get_stream (LOG_TYPE_SUCCESS),
 			LOG_TYPE_SUCCESS, LOG_TYPE_NONE,
-			msg, args
+			msg, args,
+			log_global_output_type
 		);
 
 		va_end (args);
@@ -539,14 +698,33 @@ void clibs_log_success (const char *msg, ...) {
 // prints a debug message to stdout
 void clibs_log_debug (const char *msg, ...) {
 
-	if (msg) {
+	if (msg && !quiet) {
 		va_list args;
 		va_start (args, msg);
 
 		clibs_log_internal (
 			clibs_log_get_stream (LOG_TYPE_DEBUG),
 			LOG_TYPE_DEBUG, LOG_TYPE_NONE,
-			msg, args
+			msg, args,
+			log_global_output_type
+		);
+
+		va_end (args);
+	}
+
+}
+
+// prints a message with no type or format
+void clibs_log_raw (const char *msg, ...) {
+
+	if (msg && !quiet) {
+		va_list args;
+		va_start (args, msg);
+
+		clibs_log_internal_raw (
+			clibs_log_get_stream (LOG_TYPE_NONE),
+			msg, args,
+			log_global_output_type
 		);
 
 		va_end (args);
@@ -557,10 +735,13 @@ void clibs_log_debug (const char *msg, ...) {
 // prints a line break, equivalent to printf ("\n")
 void clibs_log_line_break (void) {
 
-	switch (log_output_type) {
-		case LOG_OUTPUT_TYPE_STD: (void) fprintf (stdout, "\n"); break;
-		case LOG_OUTPUT_TYPE_FILE: (void) fprintf (clibs_log_get_stream (LOG_TYPE_NONE), "\n"); break;
-
+	switch (log_global_output_type) {
+		case LOG_OUTPUT_TYPE_STD:
+			(void) fprintf (stdout, "\n");
+			break;
+		case LOG_OUTPUT_TYPE_FILE:
+			(void) fprintf (clibs_log_get_stream (LOG_TYPE_NONE), "\n");
+			break;
 		case LOG_OUTPUT_TYPE_BOTH:
 			(void) fprintf (stdout, "\n");
 			(void) fprintf (clibs_log_get_stream (LOG_TYPE_NONE), "\n");
@@ -575,47 +756,23 @@ void clibs_log_line_break (void) {
 
 #pragma region main
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 static void *clibs_log_update (void *data) {
 
-	sleep (log_file_update_interval);
+	(void) sleep (log_file_update_interval);
 
 	while (update_log_file) {
 		(void) fflush (logfile);
-		sleep (log_file_update_interval);
+		(void) sleep (log_file_update_interval);
 	}
 
 	return NULL;
 
 }
 
-static void clibs_log_init_type_file (void) {
-
-	if (logs_pathname) {
-		char filename[1024] = { 0 };
-		(void) snprintf (filename, 1024, "%s/%ld.log", logs_pathname->str, time (NULL));
-
-		logfile = fopen (filename, "w+");
-		if (logfile) {
-			fprintf (logfile, "\nClibs Version: %s\n", CLIBS_VERSION_NAME);
-			fprintf (logfile, "Release Date & time: %s - %s\n", CLIBS_VERSION_DATE, CLIBS_VERSION_TIME);
-			fprintf (logfile, "Author: %s\n\n", CLIBS_VERSION_AUTHOR);
-
-			update_log_file = true;
-			(void) thread_create_detachable (&update_log_thread_id, clibs_log_update, NULL);
-		}
-
-		else {
-			fprintf (stderr, "\n\nFailed to open %s log file!\n", filename);
-			perror ("Error");
-			printf ("\n\n");
-		}
-	}
-
-	else {
-		fprintf (stderr, "\n\nLogs pathname has not been set!\n\n");
-	}
-
-}
+#pragma GCC diagnostic pop
 
 void clibs_log_init (void) {
 
@@ -626,10 +783,27 @@ void clibs_log_init (void) {
 		pool_init (log_pool, clibs_log_new, LOG_POOL_INIT);
 	}
 
-	switch (log_output_type) {
+	if (!logs_pathname) {
+		logs_pathname = str_new (LOG_DEFAULT_PATH);
+	}
+
+	switch (log_global_output_type) {
 		case LOG_OUTPUT_TYPE_FILE:
 		case LOG_OUTPUT_TYPE_BOTH: {
-			clibs_log_init_type_file ();
+			char filename[1024] = { 0 };
+			(void) snprintf (filename, 1024, "%s/%ld.log", logs_pathname->str, time (NULL));
+
+			logfile = fopen (filename, "w+");
+			if (logfile) {
+				update_log_file = true;
+				(void) thread_create_detachable (&update_log_thread_id, clibs_log_update, NULL);
+			}
+
+			else {
+				(void) fprintf (stderr, "\n\nFailed to open %s log file!\n", filename);
+				perror ("Error");
+				(void) fprintf (stderr, "\n\n");
+			}
 		} break;
 
 		default: break;
@@ -642,7 +816,7 @@ void clibs_log_end (void) {
 	update_log_file = false;
 
 	if (logfile) {
-		fclose (logfile);
+		(void) fclose (logfile);
 		logfile = NULL;
 	}
 
