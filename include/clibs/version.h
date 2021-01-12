@@ -7,6 +7,10 @@
 #define CLIBS_VERSION_TIME					"21:41 CST"
 #define CLIBS_VERSION_AUTHOR				"Erick Salas"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // print full clibs version information
 extern void clibs_version_print_full (void);
 
@@ -15,5 +19,9 @@ extern void clibs_version_print_version_id (void);
 
 // print the version name
 extern void clibs_version_print_version_name (void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
