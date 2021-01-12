@@ -1,0 +1,54 @@
+name: CLibs Production Integration
+
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    branches:
+      - 'master'
+
+jobs:
+  build:
+    # build sources with production flags
+    name: CLibs production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: gcc make
+        run: make TYPE=production
+
+      - name: Archive Shared Library
+        uses: actions/upload-artifact@v2
+        with:
+          name: clibs-lib
+          path: ./bin/libclibs.so
+          retention-days: 1
+  
+  test:
+    # run tests with production sources
+    name: CLibs production tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get Shared Library
+        uses: actions/download-artifact@v2
+        with:
+          name: clibs-lib
+          path: ./bin
+
+      - name: gcc tests
+        run: make TYPE=production test
+      - name: gcc run tests
+        run: bash test/run.sh
+
+      - name: clean tests
+        run: make clean-tests
+
+      - name: g++ tests
+        run: make TYPE=production CC=g++ test
+      - name: g++ run tests
+        run: bash test/run.sh
