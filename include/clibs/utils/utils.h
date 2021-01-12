@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*** misc ***/
 
 extern bool system_is_little_endian (void);
@@ -15,6 +19,8 @@ extern int clamp_int (int val, int min, int max);
 extern int abs_int (int value);
 
 extern float lerp (float first, float second, float by);
+
+extern bool float_compare (float f1, float f2);
 
 /*** random ***/
 
@@ -67,6 +73,9 @@ extern void c_string_remove_spaces (char *s);
 
 // removes any CRLF characters in a string
 extern void c_string_remove_line_breaks (char *s);
+
+// removes all spaces and CRLF in the c string
+extern void c_string_remove_spaces_and_line_breaks (char *s);
 
 // get how many tokens will be extracted by counting the number of apperances of the delim
 // the original string won't be affected
@@ -145,8 +154,12 @@ extern char *c_string_remove_sub_simetric_token (
 // returns a newly allocated string, and a option to get the substring
 extern char *c_string_remove_sub_range_token (
 	char *str,
-	const char token, unsigned int first, unsigned int last,
+	const char token, int first, int last,
 	char **sub
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

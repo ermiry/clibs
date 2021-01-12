@@ -1,0 +1,61 @@
+name: CLibs Continuous Integration
+
+on:
+  push:
+    branches-ignore:
+      - 'master'
+      - '*beta'
+  pull_request:
+    branches-ignore:
+      - 'master'
+      - '*beta'
+
+jobs:
+  build:
+    name: CLibs build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: System Information
+        run: gcc --version && g++ --version
+
+      - name: gcc make
+        run: make
+
+      - name: Archive Shared Library
+        uses: actions/upload-artifact@v2
+        with:
+          name: clibs-lib
+          path: ./bin/libclibs.so
+          retention-days: 1
+
+  test:
+    name: CLibs tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: sudo apt-get install libcurl4-openssl-dev
+
+      - name: Get Shared Library
+        uses: actions/download-artifact@v2
+        with:
+          name: clibs-lib
+          path: ./bin
+
+      - name: gcc tests
+        run: make test
+      - name: gcc run tests
+        run: bash test/run.sh
+
+      - name: clean tests
+        run: make clean-tests
+
+      - name: g++ tests
+        run: make CC=g++ test
+      - name: g++ run tests
+        run: bash test/run.sh

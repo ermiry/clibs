@@ -2,7 +2,14 @@
 #define _CLIBS_COLLECTIONS_AVL_H_
 
 #include <stdbool.h>
+
 #include <pthread.h>
+
+#include "clibs/types/types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct AVLNode {
 
@@ -11,8 +18,6 @@ typedef struct AVLNode {
 	struct AVLNode *left, *right;
 
 } AVLNode;
-
-typedef int (*Comparator)(const void*, const void*);
 
 typedef struct AVLTree {
 
@@ -31,7 +36,8 @@ typedef struct AVLTree {
 // nodes' data is only deleted if the destroy method was set
 extern void avl_delete (AVLTree *tree);
 
-// sets the avl tree comparator function that will be used for the balance factor
+// sets the avl tree comparator function
+// that will be used for the balance factor
 extern void avl_set_comparator (
 	AVLTree *tree, Comparator comparator
 );
@@ -80,10 +86,17 @@ extern void *avl_remove_node (
 	AVLTree *tree, void *data
 );
 
-// removes all nodes from an avl tree, the node nada is only destroyed if a destroy method is set
+// removes all nodes from an avl tree
+// the nodes data is only destroyed if a destroy method is set
+// ability to use a custom destroy method
+// other than the one set in avl_init () or avl_set_destroy ()
 // returns 0 on success, 1 on error
 extern unsigned int avl_clear_tree (
 	AVLTree *tree, void (*destroy)(void *data)
 );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

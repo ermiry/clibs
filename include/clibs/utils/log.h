@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#define LOG_DEFAULT_PATH		"/var/log/clibs"
+
 #define LOG_POOL_INIT			32
 
 #define LOG_DATETIME_SIZE		32
@@ -21,6 +23,10 @@
 #define LOG_COLOR_RESET     "\x1b[0m"
 
 #define LOG_DEFAULT_UPDATE_INTERVAL			1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #pragma region types
 
@@ -57,15 +63,21 @@ typedef enum LogOutputType {
 extern LogOutputType clibs_log_get_output_type (void);
 
 // sets the log output type to use
-extern void clibs_log_set_output_type (LogOutputType type);
+extern void clibs_log_set_output_type (
+	LogOutputType type
+);
 
 // sets the path where logs files will be stored
 // returns 0 on success, 1 on error
-extern unsigned int clibs_log_set_path (const char *pathname);
+extern unsigned int clibs_log_set_path (
+	const char *pathname
+);
 
 // sets the interval in secs which will be used to sync the contents of the log file to disk
 // the default values is 1 second
-extern void clibs_log_set_update_interval (unsigned int interval);
+extern void clibs_log_set_update_interval (
+	unsigned int interval
+);
 
 #define LOG_TIME_TYPE_MAP(XX)										\
 	XX(0, 	NONE, 		None,		Logs without time)				\
@@ -81,9 +93,13 @@ typedef enum LogTimeType {
 
 } LogTimeType;
 
-extern const char *clibs_log_time_type_to_string (LogTimeType type);
+extern const char *clibs_log_time_type_to_string (
+	LogTimeType type
+);
 
-extern const char *clibs_log_time_type_description (LogTimeType type);
+extern const char *clibs_log_time_type_description (
+	LogTimeType type
+);
 
 // returns the current log time configuration
 extern LogTimeType clibs_log_get_time_config (void);
@@ -98,6 +114,11 @@ extern void clibs_log_set_time_config (LogTimeType type);
 // set if logs datetimes will use local time or not
 extern void clibs_log_set_local_time (bool value);
 
+// if the log's quiet option is set to TRUE,
+// only success, warning & error messages will be handled
+// any other type will be ignored
+extern void clibs_log_set_quiet (bool value);
+
 #pragma endregion
 
 #pragma region public
@@ -105,6 +126,23 @@ extern void clibs_log_set_local_time (bool value);
 // creates and prints a message of custom types
 // based on the first type, the message can be printed with colors to stdout
 extern void clibs_log (
+	LogType first_type, LogType second_type,
+	const char *format, ...
+);
+
+// creates and prints a message of custom types
+// and adds the date & time
+// if the log_time_type has been configured, it will be kept
+extern void clibs_log_with_date (
+	LogType first_type, LogType second_type,
+	const char *format, ...
+);
+
+// creates and prints a message of custom types
+// to stdout or stderr based on type
+// and to log file if available
+// this messages ignore the quiet flag
+extern void clibs_log_both (
 	LogType first_type, LogType second_type,
 	const char *format, ...
 );
@@ -124,6 +162,9 @@ extern void clibs_log_success (const char *msg, ...);
 // prints a debug message to stdout
 extern void clibs_log_debug (const char *msg, ...);
 
+// prints a message with no type or format
+extern void clibs_log_raw (const char *msg, ...);
+
 // prints a line break, equivalent to printf ("\n")
 extern void clibs_log_line_break (void);
 
@@ -136,5 +177,9 @@ extern void clibs_log_init (void);
 extern void clibs_log_end (void);
 
 #pragma endregion
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

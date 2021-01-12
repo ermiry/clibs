@@ -6,6 +6,10 @@
 
 #include "clibs/threads/jobs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct _PoolThread;
 
 typedef struct Thpool {
@@ -58,5 +62,9 @@ extern void thpool_wait (Thpool *thpool);
 
 // destroys the thpool and deletes all of its data
 extern void thpool_destroy (Thpool *thpool);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

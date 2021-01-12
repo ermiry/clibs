@@ -5,6 +5,10 @@
 
 #include "dlist.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct Queue {
 
 	DoubleList *dlist;
@@ -44,5 +48,9 @@ extern void *queue_pop (Queue *queue);
 
 // gets the oldest data (the one at the start)
 extern void *queue_pop (Queue *queue);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
