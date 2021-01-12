@@ -3,8 +3,8 @@
 
 #define CLIBS_VERSION						"1.0"
 #define CLIBS_VERSION_NAME					"Release 1.0"
-#define CLIBS_VERSION_DATE					"03/12/2020"
-#define CLIBS_VERSION_TIME					"21:41 CST"
+#define CLIBS_VERSION_DATE					"11/01/2021"
+#define CLIBS_VERSION_TIME					"23:24 CST"
 #define CLIBS_VERSION_AUTHOR				"Erick Salas"
 
 #ifdef __cplusplus
