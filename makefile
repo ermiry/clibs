@@ -4,7 +4,7 @@ NATIVE		:= 0
 
 SLIB		:= libclibs.so
 
-ll: directories $(SLIB)
+all: directories $(SLIB)
 
 directories:
 	@mkdir -p $(TARGETDIR)
@@ -24,6 +24,8 @@ MATH		:= -lm
 DEFINES		:= -D _GNU_SOURCE
 
 CC          := gcc
+
+GCCVGTEQ8 	:= $(shell expr `gcc -dumpversion | cut -f1 -d.` \>= 8)
 
 SRCDIR      := src
 INCDIR      := include
